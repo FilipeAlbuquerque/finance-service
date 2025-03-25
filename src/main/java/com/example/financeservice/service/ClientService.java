@@ -5,12 +5,10 @@ import com.example.financeservice.exception.ResourceAlreadyExistsException;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.Client;
 import com.example.financeservice.repository.ClientRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +20,7 @@ public class ClientService {
   public List<ClientDTO> getAllClients() {
     return clientRepository.findAll().stream()
         .map(this::convertToDTO)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Transactional(readOnly = true)
