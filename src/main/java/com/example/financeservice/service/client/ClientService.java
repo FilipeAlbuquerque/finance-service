@@ -1,4 +1,4 @@
-package com.example.financeservice.service;
+package com.example.financeservice.service.client;
 
 import com.example.financeservice.dto.ClientDTO;
 import com.example.financeservice.exception.ResourceAlreadyExistsException;

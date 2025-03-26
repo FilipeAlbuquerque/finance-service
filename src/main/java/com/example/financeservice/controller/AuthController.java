@@ -1,4 +1,4 @@
-package com.example.financeservice.controller.auth;
+package com.example.financeservice.controller;
 
 import com.example.financeservice.dto.auth.AuthRequestDTO;
 import com.example.financeservice.dto.auth.AuthResponseDTO;
