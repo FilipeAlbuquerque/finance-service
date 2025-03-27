@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -23,10 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:h2:mem:testdb",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
-})
+@ActiveProfiles("test") // Ativa o perfil de teste que usa H2 em vez de PostgreSQL
 class ClientControllerTest {
 
   @Autowired
@@ -65,7 +62,7 @@ class ClientControllerTest {
   }
 
   private String extractTokenFromResponse(String response) {
-    // Metodo de fallback para extrair token quando a resposta
+    // Método de fallback para extrair token quando a resposta
     // não está no formato AuthResponseDTO
     if (response.contains("token")) {
       int tokenIndex = response.indexOf("token") + 8;
@@ -115,7 +112,7 @@ class ClientControllerTest {
             .header("Authorization", "Bearer " + jwtToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-        .andExpect(jsonPath("$[*].id", hasItem(createdClient.getId().intValue())));  // Verifica se o cliente criado está na lista
+        .andExpect(jsonPath("$[*].id", hasItem(createdClient.getId().intValue())));
 
     // Update client
     ClientDTO updatedClientDTO = ClientDTO.builder()
