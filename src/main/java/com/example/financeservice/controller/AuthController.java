@@ -3,6 +3,8 @@ package com.example.financeservice.controller;
 import com.example.financeservice.dto.auth.AuthRequestDTO;
 import com.example.financeservice.dto.auth.AuthResponseDTO;
 import com.example.financeservice.security.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,21 +21,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
-  private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
-  @Autowired
-  private AuthenticationManager authenticationManager;
-
-  @Autowired
-  private JwtUtils jwtUtils;
+  private final AuthenticationManager authenticationManager;
+  private final JwtUtils jwtUtils;
 
   @PostMapping("/login")
   public ResponseEntity<?> login(@RequestBody AuthRequestDTO request) {
-    logger.info("Login attempt with username: {}", request.getUsername());
+    log.info("Authentication attempt for user: {}", request.getUsername());
 
     try {
       // Autenticar usuário
@@ -43,7 +43,7 @@ public class AuthController {
               request.getPassword())
       );
 
-      logger.info("User authenticated: {}", request.getUsername());
+      log.info("User authenticated: {}", request.getUsername());
 
       // Atualizar SecurityContext
       SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -57,15 +57,15 @@ public class AuthController {
           .map(GrantedAuthority::getAuthority)
           .toArray(String[]::new);
 
-      logger.info("Generated token for: {}, with roles: {}", userDetails.getUsername(), String.join(", ", roles));
+      log.info("Generated token for: {}, with roles: {}", userDetails.getUsername(), String.join(", ", roles));
 
       // Retornar resposta com token
       return ResponseEntity.ok(new AuthResponseDTO(jwt, userDetails.getUsername(), roles));
     } catch (BadCredentialsException e) {
-      logger.warn("Authentication failed for user: {}", request.getUsername());
+      log.warn("Authentication failed for user: {}", request.getUsername());
       return ResponseEntity.status(401).body("Invalid credentials");
     } catch (Exception e) {
-      logger.error("Error during authentication: {}", e.getMessage(), e);
+      log.error("Error during authentication: {}", e.getMessage(), e);
       return ResponseEntity.status(500).body("Authentication error: " + e.getMessage());
     }
   }
@@ -75,10 +75,12 @@ public class AuthController {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
     if (auth != null && auth.isAuthenticated()) {
+      log.info("Token test successful for user: {}", auth.getName());
       return ResponseEntity.ok("Token válido para usuário: " + auth.getName() +
           " com autoridades: " + auth.getAuthorities());
     }
 
+    log.warn("Token test failed: No authenticated user found");
     return ResponseEntity.status(401).body("Não autenticado");
   }
 }

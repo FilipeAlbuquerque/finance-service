@@ -5,8 +5,7 @@ import com.example.financeservice.service.client.ClientService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,58 +23,97 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/clients")
 @RequiredArgsConstructor
+@Slf4j
 public class ClientController {
-
-  private static final Logger logger = LoggerFactory.getLogger(ClientController.class);
 
   private final ClientService clientService;
 
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
   public ResponseEntity<List<ClientDTO>> getAllClients() {
-    logAuthentication("getAllClients");
-    return ResponseEntity.ok(clientService.getAllClients());
+    log.info("API Request: Fetching all clients");
+
+    try {
+      List<ClientDTO> clients = clientService.getAllClients();
+      log.info("API Response: Retrieved {} clients", clients.size());
+      return ResponseEntity.ok(clients);
+    } catch (Exception e) {
+      log.error("API Error: Failed to retrieve all clients", e);
+      throw e;
+    }
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
   public ResponseEntity<ClientDTO> getClientById(@PathVariable Long id) {
-    logAuthentication("getClientById");
-    return ResponseEntity.ok(clientService.getClientById(id));
+    log.info("API Request: Fetching client with ID: {}", id);
+
+    try {
+      ClientDTO client = clientService.getClientById(id);
+      log.info("API Response: Retrieved client with ID: {}, email: {}", id, client.getEmail());
+      return ResponseEntity.ok(client);
+    } catch (Exception e) {
+      log.error("API Error: Failed to retrieve client with ID: {}", id, e);
+      throw e;
+    }
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
   public ResponseEntity<ClientDTO> createClient(@Valid @RequestBody ClientDTO clientDTO) {
-    logAuthentication("createClient");
-    ClientDTO createdClient = clientService.createClient(clientDTO);
-    return new ResponseEntity<>(createdClient, HttpStatus.CREATED);
+    log.info("API Request: Creating new client with email: {}", clientDTO.getEmail());
+
+    try {
+      ClientDTO createdClient = clientService.createClient(clientDTO);
+      log.info("API Response: Successfully created client with ID: {}, email: {}",
+          createdClient.getId(), createdClient.getEmail());
+      return new ResponseEntity<>(createdClient, HttpStatus.CREATED);
+    } catch (Exception e) {
+      log.error("API Error: Failed to create client with email: {}", clientDTO.getEmail(), e);
+      throw e;
+    }
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
   public ResponseEntity<ClientDTO> updateClient(@PathVariable Long id,
       @Valid @RequestBody ClientDTO clientDTO) {
-    logAuthentication("updateClient");
-    return ResponseEntity.ok(clientService.updateClient(id, clientDTO));
+    log.info("API Request: Updating client with ID: {}", id);
+
+    try {
+      ClientDTO updatedClient = clientService.updateClient(id, clientDTO);
+      log.info("API Response: Successfully updated client with ID: {}, email: {}",
+          updatedClient.getId(), updatedClient.getEmail());
+      return ResponseEntity.ok(updatedClient);
+    } catch (Exception e) {
+      log.error("API Error: Failed to update client with ID: {}", id, e);
+      throw e;
+    }
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
   public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
-    logAuthentication("deleteClient");
-    clientService.deleteClient(id);
-    return ResponseEntity.noContent().build();
+    log.info("API Request: Deleting client with ID: {}", id);
+
+    try {
+      clientService.deleteClient(id);
+      log.info("API Response: Successfully deleted client with ID: {}", id);
+      return ResponseEntity.noContent().build();
+    } catch (Exception e) {
+      log.error("API Error: Failed to delete client with ID: {}", id, e);
+      throw e;
+    }
   }
 
-  // Metodo auxiliar para logar informações da autenticação para debug
-  private void logAuthentication(String method) {
+  // Método auxiliar para logar informações de autenticação
+  private void logAuthentication() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth != null) {
-      logger.debug("{} - User: {}, Authenticated: {}, Authorities: {}",
-          method, auth.getName(), auth.isAuthenticated(), auth.getAuthorities());
+      log.debug("Authentication: User={}, Authenticated={}, Authorities={}",
+          auth.getName(), auth.isAuthenticated(), auth.getAuthorities());
     } else {
-      logger.debug("{} - No authentication found in SecurityContext", method);
+      log.debug("Authentication: No security context available");
     }
   }
 }
