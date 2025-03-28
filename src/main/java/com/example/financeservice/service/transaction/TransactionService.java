@@ -10,6 +10,7 @@ import com.example.financeservice.model.Account;
 import com.example.financeservice.model.Transaction;
 import com.example.financeservice.repository.AccountRepository;
 import com.example.financeservice.repository.TransactionRepository;
+import com.example.financeservice.service.metrics.MetricsService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,12 +28,16 @@ public class TransactionService {
 
   private final TransactionRepository transactionRepository;
   private final AccountRepository accountRepository;
+  private final MetricsService metricsService;
 
   @Transactional(readOnly = true)
   public List<TransactionDTO> getAllTransactions() {
     log.debug("Service: Getting all transactions");
 
-    List<Transaction> transactions = transactionRepository.findAll();
+    List<Transaction> transactions = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findAll",
+        () -> transactionRepository.findAll());
+
     log.debug("Service: Found {} transactions in database", transactions.size());
 
     return transactions.stream()
@@ -44,11 +49,14 @@ public class TransactionService {
   public TransactionDTO getTransactionById(Long id) {
     log.debug("Service: Getting transaction with ID: {}", id);
 
-    Transaction transaction = transactionRepository.findById(id)
-        .orElseThrow(() -> {
-          log.error("Service: Transaction not found with ID: {}", id);
-          return new ResourceNotFoundException("Transaction not found with id: " + id);
-        });
+    Transaction transaction = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findById",
+        () -> transactionRepository.findById(id)
+            .orElseThrow(() -> {
+              log.error("Service: Transaction not found with ID: {}", id);
+              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getTransactionById");
+              return new ResourceNotFoundException("Transaction not found with id: " + id);
+            }));
 
     log.debug("Service: Found transaction with ID: {}, type: {}, amount: {}",
         id, transaction.getType(), transaction.getAmount());
@@ -59,12 +67,15 @@ public class TransactionService {
   public TransactionDTO getTransactionByTransactionId(String transactionId) {
     log.debug("Service: Getting transaction with transaction ID: {}", transactionId);
 
-    Transaction transaction = transactionRepository.findByTransactionId(transactionId)
-        .orElseThrow(() -> {
-          log.error("Service: Transaction not found with transaction ID: {}", transactionId);
-          return new ResourceNotFoundException(
-              "Transaction not found with transaction id: " + transactionId);
-        });
+    Transaction transaction = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findByTransactionId",
+        () -> transactionRepository.findByTransactionId(transactionId)
+            .orElseThrow(() -> {
+              log.error("Service: Transaction not found with transaction ID: {}", transactionId);
+              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getTransactionByTransactionId");
+              return new ResourceNotFoundException(
+                  "Transaction not found with transaction id: " + transactionId);
+            }));
 
     log.debug("Service: Found transaction with transaction ID: {}, type: {}, amount: {}",
         transactionId, transaction.getType(), transaction.getAmount());
@@ -75,13 +86,19 @@ public class TransactionService {
   public List<TransactionDTO> getTransactionsByAccount(String accountNumber) {
     log.debug("Service: Getting transactions for account: {}", accountNumber);
 
-    Account account = accountRepository.findByAccountNumber(accountNumber)
-        .orElseThrow(() -> {
-          log.error("Service: Account not found with number: {}", accountNumber);
-          return new ResourceNotFoundException("Account not found with number: " + accountNumber);
-        });
+    Account account = metricsService.recordRepositoryExecutionTime(
+        "AccountRepository", "findByAccountNumber",
+        () -> accountRepository.findByAccountNumber(accountNumber)
+            .orElseThrow(() -> {
+              log.error("Service: Account not found with number: {}", accountNumber);
+              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getTransactionsByAccount");
+              return new ResourceNotFoundException("Account not found with number: " + accountNumber);
+            }));
 
-    List<Transaction> transactions = transactionRepository.findByAccount(account);
+    List<Transaction> transactions = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findByAccount",
+        () -> transactionRepository.findByAccount(account));
+
     log.debug("Service: Found {} transactions for account: {}", transactions.size(), accountNumber);
 
     return transactions.stream()
@@ -95,14 +112,19 @@ public class TransactionService {
     log.debug("Service: Getting paginated transactions for account: {}, page: {}, size: {}",
         accountNumber, pageable.getPageNumber(), pageable.getPageSize());
 
-    Account account = accountRepository.findByAccountNumber(accountNumber)
-        .orElseThrow(() -> {
-          log.error("Service: Account not found with number: {}", accountNumber);
-          return new ResourceNotFoundException("Account not found with number: " + accountNumber);
-        });
+    Account account = metricsService.recordRepositoryExecutionTime(
+        "AccountRepository", "findByAccountNumber",
+        () -> accountRepository.findByAccountNumber(accountNumber)
+            .orElseThrow(() -> {
+              log.error("Service: Account not found with number: {}", accountNumber);
+              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getTransactionsByAccountPaginated");
+              return new ResourceNotFoundException("Account not found with number: " + accountNumber);
+            }));
 
-    Page<Transaction> transactions = transactionRepository.findByAccountPaginated(account,
-        pageable);
+    Page<Transaction> transactions = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findByAccountPaginated",
+        () -> transactionRepository.findByAccountPaginated(account, pageable));
+
     log.debug("Service: Found page {} of {} for account: {}, total elements: {}",
         pageable.getPageNumber(), pageable.getPageSize(), accountNumber,
         transactions.getTotalElements());
@@ -116,14 +138,19 @@ public class TransactionService {
     log.debug("Service: Generating statement for account: {} from {} to {}",
         accountNumber, startDate, endDate);
 
-    Account account = accountRepository.findByAccountNumber(accountNumber)
-        .orElseThrow(() -> {
-          log.error("Service: Account not found with number: {}", accountNumber);
-          return new ResourceNotFoundException("Account not found with number: " + accountNumber);
-        });
+    Account account = metricsService.recordRepositoryExecutionTime(
+        "AccountRepository", "findByAccountNumber",
+        () -> accountRepository.findByAccountNumber(accountNumber)
+            .orElseThrow(() -> {
+              log.error("Service: Account not found with number: {}", accountNumber);
+              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getAccountStatement");
+              return new ResourceNotFoundException("Account not found with number: " + accountNumber);
+            }));
 
-    List<Transaction> transactions = transactionRepository.findByAccountAndDateRange(account,
-        startDate, endDate);
+    List<Transaction> transactions = metricsService.recordRepositoryExecutionTime(
+        "TransactionRepository", "findByAccountAndDateRange",
+        () -> transactionRepository.findByAccountAndDateRange(account, startDate, endDate));
+
     log.debug("Service: Found {} transactions for account: {} between {} and {}",
         transactions.size(), accountNumber, startDate, endDate);
 
@@ -151,110 +178,160 @@ public class TransactionService {
         transferDTO.getAmount(), transferDTO.getSourceAccountNumber(),
         transferDTO.getDestinationAccountNumber());
 
-    // Validations
-    if (transferDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-      log.warn("Service: Invalid transfer amount: {}", transferDTO.getAmount());
-      throw new InvalidTransactionException("Transfer amount must be positive");
-    }
-
-    if (transferDTO.getSourceAccountNumber().equals(transferDTO.getDestinationAccountNumber())) {
-      log.warn("Service: Source and destination accounts are the same: {}",
-          transferDTO.getSourceAccountNumber());
-      throw new InvalidTransactionException("Source and destination accounts cannot be the same");
-    }
-
-    // Get accounts with lock to prevent concurrent modifications
-    Account sourceAccount = accountRepository.findByAccountNumberWithLock(
-            transferDTO.getSourceAccountNumber())
-        .orElseThrow(() -> {
-          log.error("Service: Source account not found with number: {}",
-              transferDTO.getSourceAccountNumber());
-          return new ResourceNotFoundException(
-              "Source account not found with number: " + transferDTO.getSourceAccountNumber());
-        });
-
-    Account destinationAccount = accountRepository.findByAccountNumberWithLock(
-            transferDTO.getDestinationAccountNumber())
-        .orElseThrow(() -> {
-          log.error("Service: Destination account not found with number: {}",
-              transferDTO.getDestinationAccountNumber());
-          return new ResourceNotFoundException("Destination account not found with number: "
-              + transferDTO.getDestinationAccountNumber());
-        });
-
-    // Check if accounts are active
-    if (sourceAccount.getStatus() != Account.AccountStatus.ACTIVE) {
-      log.warn("Service: Source account is not active. Account: {}, Status: {}",
-          transferDTO.getSourceAccountNumber(), sourceAccount.getStatus());
-      throw new InvalidTransactionException("Source account is not active");
-    }
-
-    if (destinationAccount.getStatus() != Account.AccountStatus.ACTIVE) {
-      log.warn("Service: Destination account is not active. Account: {}, Status: {}",
-          transferDTO.getDestinationAccountNumber(), destinationAccount.getStatus());
-      throw new InvalidTransactionException("Destination account is not active");
-    }
-
-    // Check if source account has sufficient funds
-    if (sourceAccount.getBalance().compareTo(transferDTO.getAmount()) < 0) {
-      log.warn(
-          "Service: Insufficient funds in source account. Account: {}, Balance: {}, Requested amount: {}",
-          transferDTO.getSourceAccountNumber(), sourceAccount.getBalance(),
-          transferDTO.getAmount());
-      throw new InsufficientFundsException("Insufficient funds in source account");
-    }
-
-    // Create transaction
-    Transaction transaction = new Transaction();
-    transaction.setAmount(transferDTO.getAmount());
-    transaction.setType(Transaction.TransactionType.TRANSFER);
-    transaction.setDescription(transferDTO.getDescription());
-    transaction.setSourceAccount(sourceAccount);
-    transaction.setDestinationAccount(destinationAccount);
-    transaction.setStatus(Transaction.TransactionStatus.PENDING);
-
-    // Save transaction
-    Transaction savedTransaction = transactionRepository.save(transaction);
-    log.debug("Service: Created pending transaction with ID: {}, transaction ID: {}",
-        savedTransaction.getId(), savedTransaction.getTransactionId());
+    // Iniciar timer para acompanhar tempo total da transferência
+    var timer = metricsService.startTimer();
 
     try {
-      // Update account balances
-      BigDecimal sourceBalanceBefore = sourceAccount.getBalance();
-      BigDecimal destBalanceBefore = destinationAccount.getBalance();
+      // Validações
+      if (transferDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        log.warn("Service: Invalid transfer amount: {}", transferDTO.getAmount());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "transfer");
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        throw new InvalidTransactionException("Transfer amount must be positive");
+      }
 
-      sourceAccount.setBalance(sourceAccount.getBalance().subtract(transferDTO.getAmount()));
-      destinationAccount.setBalance(destinationAccount.getBalance().add(transferDTO.getAmount()));
+      if (transferDTO.getSourceAccountNumber().equals(transferDTO.getDestinationAccountNumber())) {
+        log.warn("Service: Source and destination accounts are the same: {}",
+            transferDTO.getSourceAccountNumber());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "transfer");
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        throw new InvalidTransactionException("Source and destination accounts cannot be the same");
+      }
 
-      accountRepository.save(sourceAccount);
-      accountRepository.save(destinationAccount);
+      // Get accounts with lock to prevent concurrent modifications
+      Account sourceAccount = metricsService.recordRepositoryExecutionTime(
+          "AccountRepository", "findByAccountNumberWithLock",
+          () -> accountRepository.findByAccountNumberWithLock(
+                  transferDTO.getSourceAccountNumber())
+              .orElseThrow(() -> {
+                log.error("Service: Source account not found with number: {}",
+                    transferDTO.getSourceAccountNumber());
+                metricsService.recordExceptionOccurred("ResourceNotFoundException", "transfer");
+                return new ResourceNotFoundException(
+                    "Source account not found with number: " + transferDTO.getSourceAccountNumber());
+              }));
 
-      log.debug(
-          "Service: Updated account balances. Source account: {} ({} -> {}), Destination account: {} ({} -> {})",
-          sourceAccount.getAccountNumber(), sourceBalanceBefore, sourceAccount.getBalance(),
-          destinationAccount.getAccountNumber(), destBalanceBefore,
-          destinationAccount.getBalance());
+      Account destinationAccount = metricsService.recordRepositoryExecutionTime(
+          "AccountRepository", "findByAccountNumberWithLock",
+          () -> accountRepository.findByAccountNumberWithLock(
+                  transferDTO.getDestinationAccountNumber())
+              .orElseThrow(() -> {
+                log.error("Service: Destination account not found with number: {}",
+                    transferDTO.getDestinationAccountNumber());
+                metricsService.recordExceptionOccurred("ResourceNotFoundException", "transfer");
+                return new ResourceNotFoundException("Destination account not found with number: "
+                    + transferDTO.getDestinationAccountNumber());
+              }));
 
-      // Update transaction status
-      savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-      savedTransaction = transactionRepository.save(savedTransaction);
+      // Check if accounts are active
+      if (sourceAccount.getStatus() != Account.AccountStatus.ACTIVE) {
+        log.warn("Service: Source account is not active. Account: {}, Status: {}",
+            transferDTO.getSourceAccountNumber(), sourceAccount.getStatus());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "transfer");
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        throw new InvalidTransactionException("Source account is not active");
+      }
 
-      log.info(
-          "Service: Transfer completed successfully. Transaction ID: {}, Amount: {}, From: {}, To: {}",
-          savedTransaction.getTransactionId(), transferDTO.getAmount(),
-          transferDTO.getSourceAccountNumber(), transferDTO.getDestinationAccountNumber());
+      if (destinationAccount.getStatus() != Account.AccountStatus.ACTIVE) {
+        log.warn("Service: Destination account is not active. Account: {}, Status: {}",
+            transferDTO.getDestinationAccountNumber(), destinationAccount.getStatus());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "transfer");
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        throw new InvalidTransactionException("Destination account is not active");
+      }
 
-      return convertToDTO(savedTransaction);
-    } catch (Exception e) {
-      // If any exception occurs, mark transaction as failed
-      savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
-      transactionRepository.save(savedTransaction);
+      // Check if source account has sufficient funds
+      if (sourceAccount.getBalance().compareTo(transferDTO.getAmount()) < 0) {
+        log.warn(
+            "Service: Insufficient funds in source account. Account: {}, Balance: {}, Requested amount: {}",
+            transferDTO.getSourceAccountNumber(), sourceAccount.getBalance(),
+            transferDTO.getAmount());
+        metricsService.recordExceptionOccurred("InsufficientFundsException", "transfer");
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        throw new InsufficientFundsException("Insufficient funds in source account");
+      }
 
-      log.error("Service: Transfer failed. Transaction ID: {}, Amount: {}, From: {}, To: {}",
-          savedTransaction.getTransactionId(), transferDTO.getAmount(),
-          transferDTO.getSourceAccountNumber(), transferDTO.getDestinationAccountNumber(), e);
+      // Create transaction
+      Transaction transaction = new Transaction();
+      transaction.setAmount(transferDTO.getAmount());
+      transaction.setType(Transaction.TransactionType.TRANSFER);
+      transaction.setDescription(transferDTO.getDescription());
+      transaction.setSourceAccount(sourceAccount);
+      transaction.setDestinationAccount(destinationAccount);
+      transaction.setStatus(Transaction.TransactionStatus.PENDING);
 
-      throw e;
+      // Save transaction
+      Transaction savedTransaction = metricsService.recordRepositoryExecutionTime(
+          "TransactionRepository", "save",
+          () -> transactionRepository.save(transaction));
+
+      log.debug("Service: Created pending transaction with ID: {}, transaction ID: {}",
+          savedTransaction.getId(), savedTransaction.getTransactionId());
+
+      try {
+        // Update account balances
+        BigDecimal sourceBalanceBefore = sourceAccount.getBalance();
+        BigDecimal destBalanceBefore = destinationAccount.getBalance();
+
+        sourceAccount.setBalance(sourceAccount.getBalance().subtract(transferDTO.getAmount()));
+        destinationAccount.setBalance(destinationAccount.getBalance().add(transferDTO.getAmount()));
+
+        metricsService.recordRepositoryExecutionTime(
+            "AccountRepository", "save",
+            () -> accountRepository.save(sourceAccount));
+
+        metricsService.recordRepositoryExecutionTime(
+            "AccountRepository", "save",
+            () -> accountRepository.save(destinationAccount));
+
+        log.debug(
+            "Service: Updated account balances. Source account: {} ({} -> {}), Destination account: {} ({} -> {})",
+            sourceAccount.getAccountNumber(), sourceBalanceBefore, sourceAccount.getBalance(),
+            destinationAccount.getAccountNumber(), destBalanceBefore,
+            destinationAccount.getBalance());
+
+        // Update transaction status
+        savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        Transaction finalSavedTransaction = savedTransaction;
+        savedTransaction = metricsService.recordRepositoryExecutionTime(
+            "TransactionRepository", "save",
+            () -> transactionRepository.save(finalSavedTransaction));
+
+        log.info(
+            "Service: Transfer completed successfully. Transaction ID: {}, Amount: {}, From: {}, To: {}",
+            savedTransaction.getTransactionId(), transferDTO.getAmount(),
+            transferDTO.getSourceAccountNumber(), transferDTO.getDestinationAccountNumber());
+
+        // Registrar métricas para transferência bem-sucedida
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), true);
+        metricsService.recordDailyFinancialVolume("TRANSFER", transferDTO.getAmount());
+
+        // Parar o timer e registrar o tempo total da operação
+        metricsService.stopTimer(timer, "finance.operations.transfer.time",
+            "source", transferDTO.getSourceAccountNumber(),
+            "destination", transferDTO.getDestinationAccountNumber());
+
+        return convertToDTO(savedTransaction);
+      } catch (Exception e) {
+        // If any exception occurs, mark transaction as failed
+        savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
+        transactionRepository.save(savedTransaction);
+
+        log.error("Service: Transfer failed. Transaction ID: {}, Amount: {}, From: {}, To: {}",
+            savedTransaction.getTransactionId(), transferDTO.getAmount(),
+            transferDTO.getSourceAccountNumber(), transferDTO.getDestinationAccountNumber(), e);
+
+        // Registrar métricas para transferência com falha
+        metricsService.recordTransactionProcessed("TRANSFER", transferDTO.getAmount(), false);
+        metricsService.recordExceptionOccurred(e.getClass().getSimpleName(), "transfer");
+
+        throw e;
+      }
+    } finally {
+      // Garantir que o timer seja parado mesmo em caso de exceção
+      if (timer != null) {
+        metricsService.stopTimer(timer, "finance.operations.transfer.time");
+      }
     }
   }
 
@@ -262,63 +339,101 @@ public class TransactionService {
   public TransactionDTO deposit(String accountNumber, BigDecimal amount, String description) {
     log.debug("Service: Processing deposit of {} to account: {}", amount, accountNumber);
 
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      log.warn("Service: Invalid deposit amount: {}", amount);
-      throw new InvalidTransactionException("Deposit amount must be positive");
-    }
-
-    Account account = accountRepository.findByAccountNumberWithLock(accountNumber)
-        .orElseThrow(() -> {
-          log.error("Service: Account not found with number: {}", accountNumber);
-          return new ResourceNotFoundException("Account not found with number: " + accountNumber);
-        });
-
-    if (account.getStatus() != Account.AccountStatus.ACTIVE) {
-      log.warn("Service: Account is not active. Account: {}, Status: {}", accountNumber,
-          account.getStatus());
-      throw new InvalidTransactionException("Account is not active");
-    }
-
-    // Create transaction
-    Transaction transaction = new Transaction();
-    transaction.setAmount(amount);
-    transaction.setType(Transaction.TransactionType.DEPOSIT);
-    transaction.setDescription(description);
-    transaction.setDestinationAccount(account);
-    transaction.setStatus(Transaction.TransactionStatus.PENDING);
-
-    // Save transaction
-    Transaction savedTransaction = transactionRepository.save(transaction);
-    log.debug("Service: Created pending deposit transaction with ID: {}, transaction ID: {}",
-        savedTransaction.getId(), savedTransaction.getTransactionId());
+    // Iniciar timer para acompanhar tempo total do depósito
+    var timer = metricsService.startTimer();
 
     try {
-      // Update account balance
-      BigDecimal balanceBefore = account.getBalance();
-      account.setBalance(account.getBalance().add(amount));
-      accountRepository.save(account);
+      if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        log.warn("Service: Invalid deposit amount: {}", amount);
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "deposit");
+        metricsService.recordTransactionProcessed("DEPOSIT", amount, false);
+        throw new InvalidTransactionException("Deposit amount must be positive");
+      }
 
-      log.debug("Service: Updated account balance. Account: {} ({} -> {})",
-          account.getAccountNumber(), balanceBefore, account.getBalance());
+      Account account = metricsService.recordRepositoryExecutionTime(
+          "AccountRepository", "findByAccountNumberWithLock",
+          () -> accountRepository.findByAccountNumberWithLock(accountNumber)
+              .orElseThrow(() -> {
+                log.error("Service: Account not found with number: {}", accountNumber);
+                metricsService.recordExceptionOccurred("ResourceNotFoundException", "deposit");
+                return new ResourceNotFoundException("Account not found with number: " + accountNumber);
+              }));
 
-      // Update transaction status
-      savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-      savedTransaction = transactionRepository.save(savedTransaction);
+      if (account.getStatus() != Account.AccountStatus.ACTIVE) {
+        log.warn("Service: Account is not active. Account: {}, Status: {}", accountNumber,
+            account.getStatus());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "deposit");
+        metricsService.recordTransactionProcessed("DEPOSIT", amount, false);
+        throw new InvalidTransactionException("Account is not active");
+      }
 
-      log.info(
-          "Service: Deposit completed successfully. Transaction ID: {}, Amount: {}, To account: {}",
-          savedTransaction.getTransactionId(), amount, accountNumber);
+      // Create transaction
+      Transaction transaction = new Transaction();
+      transaction.setAmount(amount);
+      transaction.setType(Transaction.TransactionType.DEPOSIT);
+      transaction.setDescription(description);
+      transaction.setDestinationAccount(account);
+      transaction.setStatus(Transaction.TransactionStatus.PENDING);
 
-      return convertToDTO(savedTransaction);
-    } catch (Exception e) {
-      // If any exception occurs, mark transaction as failed
-      savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
-      transactionRepository.save(savedTransaction);
+      // Save transaction
+      Transaction savedTransaction = metricsService.recordRepositoryExecutionTime(
+          "TransactionRepository", "save",
+          () -> transactionRepository.save(transaction));
 
-      log.error("Service: Deposit failed. Transaction ID: {}, Amount: {}, To account: {}",
-          savedTransaction.getTransactionId(), amount, accountNumber, e);
+      log.debug("Service: Created pending deposit transaction with ID: {}, transaction ID: {}",
+          savedTransaction.getId(), savedTransaction.getTransactionId());
 
-      throw e;
+      try {
+        // Update account balance
+        BigDecimal balanceBefore = account.getBalance();
+        account.setBalance(account.getBalance().add(amount));
+
+        metricsService.recordRepositoryExecutionTime(
+            "AccountRepository", "save",
+            () -> accountRepository.save(account));
+
+        log.debug("Service: Updated account balance. Account: {} ({} -> {})",
+            account.getAccountNumber(), balanceBefore, account.getBalance());
+
+        // Update transaction status
+        savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        Transaction finalSavedTransaction = savedTransaction;
+        savedTransaction = metricsService.recordRepositoryExecutionTime(
+            "TransactionRepository", "save",
+            () -> transactionRepository.save(finalSavedTransaction));
+
+        log.info(
+            "Service: Deposit completed successfully. Transaction ID: {}, Amount: {}, To account: {}",
+            savedTransaction.getTransactionId(), amount, accountNumber);
+
+        // Registrar métricas para depósito bem-sucedido
+        metricsService.recordTransactionProcessed("DEPOSIT", amount, true);
+        metricsService.recordDailyFinancialVolume("DEPOSIT", amount);
+
+        // Parar o timer e registrar o tempo total da operação
+        metricsService.stopTimer(timer, "finance.operations.deposit.time",
+            "account", accountNumber);
+
+        return convertToDTO(savedTransaction);
+      } catch (Exception e) {
+        // If any exception occurs, mark transaction as failed
+        savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
+        transactionRepository.save(savedTransaction);
+
+        log.error("Service: Deposit failed. Transaction ID: {}, Amount: {}, To account: {}",
+            savedTransaction.getTransactionId(), amount, accountNumber, e);
+
+        // Registrar métricas para depósito com falha
+        metricsService.recordTransactionProcessed("DEPOSIT", amount, false);
+        metricsService.recordExceptionOccurred(e.getClass().getSimpleName(), "deposit");
+
+        throw e;
+      }
+    } finally {
+      // Garantir que o timer seja parado mesmo em caso de exceção
+      if (timer != null) {
+        metricsService.stopTimer(timer, "finance.operations.deposit.time");
+      }
     }
   }
 
@@ -326,70 +441,110 @@ public class TransactionService {
   public TransactionDTO withdraw(String accountNumber, BigDecimal amount, String description) {
     log.debug("Service: Processing withdrawal of {} from account: {}", amount, accountNumber);
 
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      log.warn("Service: Invalid withdrawal amount: {}", amount);
-      throw new InvalidTransactionException("Withdrawal amount must be positive");
-    }
-
-    Account account = accountRepository.findByAccountNumberWithLock(accountNumber)
-        .orElseThrow(() -> {
-          log.error("Service: Account not found with number: {}", accountNumber);
-          return new ResourceNotFoundException("Account not found with number: " + accountNumber);
-        });
-
-    if (account.getStatus() != Account.AccountStatus.ACTIVE) {
-      log.warn("Service: Account is not active. Account: {}, Status: {}", accountNumber,
-          account.getStatus());
-      throw new InvalidTransactionException("Account is not active");
-    }
-
-    if (account.getBalance().compareTo(amount) < 0) {
-      log.warn(
-          "Service: Insufficient funds for withdrawal. Account: {}, Balance: {}, Requested amount: {}",
-          accountNumber, account.getBalance(), amount);
-      throw new InsufficientFundsException("Insufficient funds for withdrawal");
-    }
-
-    // Create transaction
-    Transaction transaction = new Transaction();
-    transaction.setAmount(amount);
-    transaction.setType(Transaction.TransactionType.WITHDRAWAL);
-    transaction.setDescription(description);
-    transaction.setSourceAccount(account);
-    transaction.setStatus(Transaction.TransactionStatus.PENDING);
-
-    // Save transaction
-    Transaction savedTransaction = transactionRepository.save(transaction);
-    log.debug("Service: Created pending withdrawal transaction with ID: {}, transaction ID: {}",
-        savedTransaction.getId(), savedTransaction.getTransactionId());
+    // Iniciar timer para acompanhar tempo total do saque
+    var timer = metricsService.startTimer();
 
     try {
-      // Update account balance
-      BigDecimal balanceBefore = account.getBalance();
-      account.setBalance(account.getBalance().subtract(amount));
-      accountRepository.save(account);
+      if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+        log.warn("Service: Invalid withdrawal amount: {}", amount);
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "withdraw");
+        metricsService.recordTransactionProcessed("WITHDRAWAL", amount, false);
+        throw new InvalidTransactionException("Withdrawal amount must be positive");
+      }
 
-      log.debug("Service: Updated account balance. Account: {} ({} -> {})",
-          account.getAccountNumber(), balanceBefore, account.getBalance());
+      Account account = metricsService.recordRepositoryExecutionTime(
+          "AccountRepository", "findByAccountNumberWithLock",
+          () -> accountRepository.findByAccountNumberWithLock(accountNumber)
+              .orElseThrow(() -> {
+                log.error("Service: Account not found with number: {}", accountNumber);
+                metricsService.recordExceptionOccurred("ResourceNotFoundException", "withdraw");
+                return new ResourceNotFoundException("Account not found with number: " + accountNumber);
+              }));
 
-      // Update transaction status
-      savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-      savedTransaction = transactionRepository.save(savedTransaction);
+      if (account.getStatus() != Account.AccountStatus.ACTIVE) {
+        log.warn("Service: Account is not active. Account: {}, Status: {}", accountNumber,
+            account.getStatus());
+        metricsService.recordExceptionOccurred("InvalidTransactionException", "withdraw");
+        metricsService.recordTransactionProcessed("WITHDRAWAL", amount, false);
+        throw new InvalidTransactionException("Account is not active");
+      }
 
-      log.info(
-          "Service: Withdrawal completed successfully. Transaction ID: {}, Amount: {}, From account: {}",
-          savedTransaction.getTransactionId(), amount, accountNumber);
+      if (account.getBalance().compareTo(amount) < 0) {
+        log.warn(
+            "Service: Insufficient funds for withdrawal. Account: {}, Balance: {}, Requested amount: {}",
+            accountNumber, account.getBalance(), amount);
+        metricsService.recordExceptionOccurred("InsufficientFundsException", "withdraw");
+        metricsService.recordTransactionProcessed("WITHDRAWAL", amount, false);
+        throw new InsufficientFundsException("Insufficient funds for withdrawal");
+      }
 
-      return convertToDTO(savedTransaction);
-    } catch (Exception e) {
-      // If any exception occurs, mark transaction as failed
-      savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
-      transactionRepository.save(savedTransaction);
+      // Create transaction
+      Transaction transaction = new Transaction();
+      transaction.setAmount(amount);
+      transaction.setType(Transaction.TransactionType.WITHDRAWAL);
+      transaction.setDescription(description);
+      transaction.setSourceAccount(account);
+      transaction.setStatus(Transaction.TransactionStatus.PENDING);
 
-      log.error("Service: Withdrawal failed. Transaction ID: {}, Amount: {}, From account: {}",
-          savedTransaction.getTransactionId(), amount, accountNumber, e);
+      // Save transaction
+      Transaction savedTransaction = metricsService.recordRepositoryExecutionTime(
+          "TransactionRepository", "save",
+          () -> transactionRepository.save(transaction));
 
-      throw e;
+      log.debug("Service: Created pending withdrawal transaction with ID: {}, transaction ID: {}",
+          savedTransaction.getId(), savedTransaction.getTransactionId());
+
+      try {
+        // Update account balance
+        BigDecimal balanceBefore = account.getBalance();
+        account.setBalance(account.getBalance().subtract(amount));
+
+        metricsService.recordRepositoryExecutionTime(
+            "AccountRepository", "save",
+            () -> accountRepository.save(account));
+
+        log.debug("Service: Updated account balance. Account: {} ({} -> {})",
+            account.getAccountNumber(), balanceBefore, account.getBalance());
+
+        // Update transaction status
+        savedTransaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        Transaction finalSavedTransaction = savedTransaction;
+        savedTransaction = metricsService.recordRepositoryExecutionTime(
+            "TransactionRepository", "save",
+            () -> transactionRepository.save(finalSavedTransaction));
+
+        log.info(
+            "Service: Withdrawal completed successfully. Transaction ID: {}, Amount: {}, From account: {}",
+            savedTransaction.getTransactionId(), amount, accountNumber);
+
+        // Registrar métricas para saque bem-sucedido
+        metricsService.recordTransactionProcessed("WITHDRAWAL", amount, true);
+        metricsService.recordDailyFinancialVolume("WITHDRAWAL", amount);
+
+        // Parar o timer e registrar o tempo total da operação
+        metricsService.stopTimer(timer, "finance.operations.withdrawal.time",
+            "account", accountNumber);
+
+        return convertToDTO(savedTransaction);
+      } catch (Exception e) {
+        // If any exception occurs, mark transaction as failed
+        savedTransaction.setStatus(Transaction.TransactionStatus.FAILED);
+        transactionRepository.save(savedTransaction);
+
+        log.error("Service: Withdrawal failed. Transaction ID: {}, Amount: {}, From account: {}",
+            savedTransaction.getTransactionId(), amount, accountNumber, e);
+
+        // Registrar métricas para saque com falha
+        metricsService.recordTransactionProcessed("WITHDRAWAL", amount, false);
+        metricsService.recordExceptionOccurred(e.getClass().getSimpleName(), "withdraw");
+
+        throw e;
+      }
+    } finally {
+      // Garantir que o timer seja parado mesmo em caso de exceção
+      if (timer != null) {
+        metricsService.stopTimer(timer, "finance.operations.withdrawal.time");
+      }
     }
   }
 
