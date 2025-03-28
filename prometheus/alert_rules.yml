@@ -1,0 +1,83 @@
+groups:
+  - name: finance_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: process_cpu_usage > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Finance service is using over 80% CPU for over 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: sum(jvm_memory_used_bytes) / sum(jvm_memory_max_bytes) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Finance service is using over 80% memory for over 5 minutes."
+
+      - alert: APIHighResponseTime
+        expr: http_server_requests_seconds_max{uri!="/actuator/**"} > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API response time is high"
+          description: "API endpoint response time is over 1 second for over 2 minutes."
+
+      - alert: DatabaseConnectionsHigh
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connections high"
+          description: "More than 80% of database connections are in use for over 5 minutes."
+
+      - alert: TransactionFailureRateHigh
+        expr: sum(rate(finance_transactions_result_total{status="failed"}[5m])) / sum(rate(finance_transactions_count_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High transaction failure rate"
+          description: "The transaction failure rate is above 5% for the last 5 minutes."
+
+      - alert: InsufficientFundsExceptions
+        expr: increase(finance_exceptions_total{type="InsufficientFundsException"}[1h]) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of insufficient funds exceptions"
+          description: "More than 10 insufficient funds exceptions in the last hour."
+
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance is not responding for more than 1 minute."
+
+      - alert: SlowTransactions
+        expr: finance_operations_transfer_time_seconds{quantile="0.95"} > 2 or finance_operations_deposit_time_seconds{quantile="0.95"} > 1 or finance_operations_withdrawal_time_seconds{quantile="0.95"} > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow financial transactions detected"
+          description: "95th percentile of transaction time is exceeding threshold for over 5 minutes."
+
+      - alert: HighFinancialVolume
+        expr: finance_daily_volume{type="WITHDRAWAL"} > 1000000
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "High withdrawal volume"
+          description: "Daily withdrawal volume has exceeded 1,000,000 EUR."
