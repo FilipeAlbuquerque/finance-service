@@ -283,4 +283,24 @@ public class MetricsService {
     log.debug("Métrica: Volume financeiro diário atualizado - tipo: {}, valor: {}",
         operationType, amount);
   }
+
+  public void recordSuccessfulLogin(String username) {
+    Counter.builder("finance.authentication.login")
+        .tag("status", "success")
+        .register(registry)
+        .increment();
+    log.debug("Métrica: Login bem-sucedido para o usuário {}", username);
+  }
+
+  public void recordFailedLogin(String username) {
+    Counter.builder("finance.authentication.login")
+        .tag("status", "failed")
+        .register(registry)
+        .increment();
+    log.debug("Métrica: Falha de login para o usuário {}", username);
+  }
+
+  public MeterRegistry getRegistry() {
+    return this.registry;
+  }
 }

@@ -31,6 +31,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
+    // Google Guava para cache e utilitários
+    implementation 'com.google.guava:guava:32.1.2-jre'
+
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
