@@ -1,23 +1,24 @@
 package com.example.financeservice;
 
-import com.example.financeservice.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class FinanceServiceApplicationTests {
 
-	@MockBean
-	private UserService userService;
+  // Specify bean name to avoid ambiguity
+  @MockBean(name = "userDetailsService")
+  private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
-	@Test
-	void contextLoads() {
-		try {
-			System.out.println("Context loaded successfully.");
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		}
-	}
+  @MockBean
+  private AuthenticationManager authenticationManager;
+
+  @Test
+  void contextLoads() {
+    System.out.println("Context loaded successfully.");
+  }
 }
