@@ -1,4 +1,4 @@
-package com.example.financeservice.service.account;
+package com.example.financeservice.service;
 
 
 import com.example.financeservice.dto.AccountDTO;
@@ -11,10 +11,8 @@ import com.example.financeservice.model.Merchant;
 import com.example.financeservice.repository.AccountRepository;
 import com.example.financeservice.repository.ClientRepository;
 import com.example.financeservice.repository.MerchantRepository;
-import com.example.financeservice.service.metrics.MetricsService;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,11 +1,9 @@
-package com.example.financeservice.service.user;
+package com.example.financeservice.service;
 
 import com.example.financeservice.exception.InvalidTokenException;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.User;
 import com.example.financeservice.repository.UserRepository;
-import com.example.financeservice.service.EmailService;
-import com.example.financeservice.service.metrics.MetricsService;
 import io.micrometer.core.instrument.Counter;
 import java.time.LocalDateTime;
 import java.util.HashSet;

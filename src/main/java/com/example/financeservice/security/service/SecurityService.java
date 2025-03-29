@@ -6,6 +6,7 @@ import com.example.financeservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,11 @@ import org.springframework.stereotype.Service;
 public class SecurityService {
 
   private final UserRepository userRepository;
+
+  // Metodo extraído para permitir substituição em testes
+  protected SecurityContext getSecurityContext() {
+    return SecurityContextHolder.getContext();
+  }
 
   public Long getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

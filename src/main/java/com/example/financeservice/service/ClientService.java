@@ -1,11 +1,10 @@
-package com.example.financeservice.service.client;
+package com.example.financeservice.service;
 
 import com.example.financeservice.dto.ClientDTO;
 import com.example.financeservice.exception.ResourceAlreadyExistsException;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.Client;
 import com.example.financeservice.repository.ClientRepository;
-import com.example.financeservice.service.metrics.MetricsService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

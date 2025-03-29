@@ -1,12 +1,10 @@
-package com.example.financeservice.client;
+package com.example.financeservice.service;
 
 import com.example.financeservice.dto.ClientDTO;
 import com.example.financeservice.exception.ResourceAlreadyExistsException;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.Client;
 import com.example.financeservice.repository.ClientRepository;
-import com.example.financeservice.service.client.ClientService;
-import com.example.financeservice.service.metrics.MetricsService;
 import io.micrometer.core.instrument.Timer;
 import java.util.Collections;
 import java.util.List;

@@ -3,7 +3,7 @@ package com.example.financeservice.controller;
 import com.example.financeservice.dto.StatementDTO;
 import com.example.financeservice.dto.TransactionDTO;
 import com.example.financeservice.dto.TransferDTO;
-import com.example.financeservice.service.transaction.TransactionService;
+import com.example.financeservice.service.TransactionService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

@@ -1,7 +1,7 @@
 package com.example.financeservice.controller;
 
 import com.example.financeservice.dto.ClientDTO;
-import com.example.financeservice.service.client.ClientService;
+import com.example.financeservice.service.ClientService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

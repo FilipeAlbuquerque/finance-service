@@ -1,4 +1,4 @@
-package com.example.financeservice.service.metrics;
+package com.example.financeservice.service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;

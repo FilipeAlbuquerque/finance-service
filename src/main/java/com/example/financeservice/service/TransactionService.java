@@ -1,4 +1,4 @@
-package com.example.financeservice.service.transaction;
+package com.example.financeservice.service;
 
 import com.example.financeservice.dto.StatementDTO;
 import com.example.financeservice.dto.TransactionDTO;
@@ -10,7 +10,6 @@ import com.example.financeservice.model.Account;
 import com.example.financeservice.model.Transaction;
 import com.example.financeservice.repository.AccountRepository;
 import com.example.financeservice.repository.TransactionRepository;
-import com.example.financeservice.service.metrics.MetricsService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;

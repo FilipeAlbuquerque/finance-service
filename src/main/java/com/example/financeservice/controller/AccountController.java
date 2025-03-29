@@ -3,7 +3,7 @@ package com.example.financeservice.controller;
 import com.example.financeservice.dto.AccountDTO;
 import com.example.financeservice.dto.CreateAccountDTO;
 import com.example.financeservice.model.Account;
-import com.example.financeservice.service.account.AccountService;
+import com.example.financeservice.service.AccountService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.example.financeservice.config;
 
-import com.example.financeservice.service.user.UserService;
+import com.example.financeservice.service.UserService;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collections;
