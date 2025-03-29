@@ -15,6 +15,11 @@ class FinanceServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
+		try {
+			System.out.println("Context loaded successfully.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
-
 }
