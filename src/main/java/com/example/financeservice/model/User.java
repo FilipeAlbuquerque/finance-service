@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.Data;
@@ -30,6 +31,18 @@ public class User {
 
   @Column(nullable = false)
   private String password;
+
+  @Column(name = "password_reset_token")
+  private String passwordResetToken;
+
+  @Column(name = "password_reset_token_expiry")
+  private LocalDateTime passwordResetTokenExpiry;
+
+  @Column(name = "first_name")
+  private String firstName;
+
+  @Column(name = "last_name")
+  private String lastName;
 
   @Column(nullable = false)
   private String email;

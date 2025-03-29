@@ -1,4 +1,8 @@
 package com.example.financeservice.exception;
 
-public class InvalidTokenException {
+public class InvalidTokenException extends RuntimeException {
+
+  public InvalidTokenException(String message) {
+    super(message);
+  }
 }

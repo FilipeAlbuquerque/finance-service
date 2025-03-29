@@ -62,7 +62,7 @@ class ClientControllerTest {
   }
 
   private String extractTokenFromResponse(String response) {
-    // Método de fallback para extrair token quando a resposta
+    // Metodo de fallback para extrair token quando a resposta
     // não está no formato AuthResponseDTO
     if (response.contains("token")) {
       int tokenIndex = response.indexOf("token") + 8;
