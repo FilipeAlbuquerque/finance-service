@@ -115,7 +115,8 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<Map<String, String>> registerUser(@Valid @RequestBody RegisterRequestDTO request) {
+  public ResponseEntity<Map<String, String>> registerUser(
+      @Valid @RequestBody RegisterRequestDTO request) {
     try {
       // Registrar tentativa de registro nas métricas
       metricsService.startTimer();
@@ -124,6 +125,8 @@ public class AuthController {
           request.getUsername(),
           request.getPassword(),
           request.getEmail(),
+          request.getFirstName(),
+          request.getLastName(),
           request.getRoles() != null ? request.getRoles() : List.of("ROLE_USER")
       );
 

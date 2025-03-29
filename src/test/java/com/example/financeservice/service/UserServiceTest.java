@@ -7,7 +7,6 @@ import com.example.financeservice.repository.UserRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +74,8 @@ class UserServiceTest {
     }
 
     @Override
-    public User createUser(String username, String password, String email, List<String> roles) {
+    public User createUser(String username, String password, String email, String firstName,
+        String lastName, List<String> roles) {
       if (userRepository.existsByUsername(username)) {
         metricsService.recordExceptionOccurred("IllegalArgumentException", "createUser");
         throw new IllegalArgumentException("Username already taken");
@@ -152,8 +152,8 @@ class UserServiceTest {
     assertThrows(UsernameNotFoundException.class,
         () -> userService.loadUserByUsername("nonexistent"));
     verify(userRepository, times(1)).findByUsername("nonexistent");
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("UsernameNotFoundException"),
-        eq("loadUserByUsername"));
+    verify(metricsService, times(1)).recordExceptionOccurred("UsernameNotFoundException",
+        "loadUserByUsername");
   }
 
   @Test
@@ -170,7 +170,7 @@ class UserServiceTest {
 
     // Act
     User result = userService.createUser("newuser", "password", "new@example.com",
-        List.of("ROLE_USER"));
+        "admin", "albuquerque", List.of("ROLE_USER"));
 
     // Assert
     assertNotNull(result);
@@ -191,7 +191,7 @@ class UserServiceTest {
     // Act & Assert
     assertThrows(IllegalArgumentException.class, () ->
         userService.createUser("existinguser", "password", "new@example.com",
-            Arrays.asList("ROLE_USER"))
+            "test", "albuquerque", List.of("ROLE_USER"))
     );
     verify(userRepository, never()).save(any(User.class));
     verify(metricsService, times(1)).recordExceptionOccurred(eq("IllegalArgumentException"),
@@ -208,7 +208,7 @@ class UserServiceTest {
     // Act & Assert
     assertThrows(IllegalArgumentException.class, () ->
         userService.createUser("newuser", "password", "existing@example.com",
-            Arrays.asList("ROLE_USER"))
+            "test", "albuquerque", List.of("ROLE_USER"))
     );
     verify(userRepository, never()).save(any(User.class));
     verify(metricsService, times(1)).recordExceptionOccurred(eq("IllegalArgumentException"),
@@ -244,8 +244,8 @@ class UserServiceTest {
     verify(userRepository, times(1)).findByEmail("nonexistent@example.com");
     verify(userRepository, never()).save(any(User.class));
     verify(emailService, never()).sendPasswordResetEmail(anyString(), anyString());
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("ResourceNotFoundException"),
-        eq("requestPasswordReset"));
+    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException",
+        "requestPasswordReset");
   }
 
   @Test

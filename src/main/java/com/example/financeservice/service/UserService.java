@@ -65,7 +65,8 @@ public class UserService implements UserDetailsService {
   }
 
   @Transactional
-  public User createUser(String username, String password, String email, List<String> roles) {
+  public User createUser(String username, String password, String email, String firstName,
+      String lastName, List<String> roles) {
     if (userRepository.existsByUsername(username)) {
       metricsService.recordExceptionOccurred("IllegalArgumentException", "createUser");
       throw new IllegalArgumentException("Username already taken");
@@ -80,6 +81,8 @@ public class UserService implements UserDetailsService {
     user.setUsername(username);
     user.setPassword(passwordEncoder.encode(password));
     user.setEmail(email);
+    user.setFirstName(firstName);
+    user.setLastName(lastName);
     user.setRoles(new HashSet<>(roles));
 
     User savedUser = userRepository.save(user);

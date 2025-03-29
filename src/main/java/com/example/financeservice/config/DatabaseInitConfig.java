@@ -38,6 +38,8 @@ public class DatabaseInitConfig {
             "admin",
             adminPassword,
             "admin@example.com",
+            "Admin",
+            "Albuquerque",
             Collections.singletonList("ROLE_ADMIN")
         );
 
