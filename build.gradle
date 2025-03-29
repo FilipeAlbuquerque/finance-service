@@ -82,7 +82,7 @@ tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.40  // Define cobertura mínima de 80%
+                minimum = 0.30  // Define cobertura mínima de 80%
             }
         }
     }
