@@ -31,12 +31,12 @@ jobs:
         run: ./gradlew clean build jacocoTestReport jacocoTestCoverageVerification --no-daemon
 
       - name: Upload JaCoCo Report
-        if: always()  # Executa sempre, independentemente do sucesso ou falha
-        uses: actions/upload-artifact@v3
+        if: always()
+        uses: actions/upload-artifact@v3.1.2  # Versão específica
         with:
           name: jacoco-report
           path: build/reports/jacoco/test/html
 
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
-        if: success()  # Só roda o build Docker se os testes e cobertura forem bem-sucedidos
+        if: success()
