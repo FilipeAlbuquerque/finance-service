@@ -7,12 +7,39 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build and Run Tests with Coverage
+        run: ./gradlew clean build jacocoTestReport jacocoTestCoverageVerification --no-daemon
+
+      - name: Upload JaCoCo Report
+        if: always()  # Executa sempre, independentemente do sucesso ou falha
+        uses: actions/upload-artifact@v3
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html
+
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+        if: success()  # Só executa o build Docker se os testes e cobertura passarem com sucesso
