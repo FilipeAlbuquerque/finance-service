@@ -31,8 +31,8 @@ jobs:
         run: ./gradlew clean build jacocoTestReport jacocoTestCoverageVerification --no-daemon
 
       - name: Upload JaCoCo Report
-        if: always()
-        uses: actions/upload-artifact@v3.1.2  # Versão específica
+        if: always()  # Executa sempre, independentemente do sucesso ou falha
+        uses: actions/upload-artifact@v3.1.2  # Versão específica da ação
         with:
           name: jacoco-report
           path: build/reports/jacoco/test/html
