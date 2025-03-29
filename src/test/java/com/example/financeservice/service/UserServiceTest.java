@@ -66,7 +66,7 @@ class UserServiceTest {
 
   private User testUser;
 
-  // Classe de teste que sobrescreve o método problemático
+  // Classe de teste que sobrescreve o metodo problemático
   private static class TestUserService extends UserService {
 
     public TestUserService(UserRepository userRepository, PasswordEncoder passwordEncoder,

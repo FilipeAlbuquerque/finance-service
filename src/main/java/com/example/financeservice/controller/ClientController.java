@@ -106,7 +106,7 @@ public class ClientController {
     }
   }
 
-  // Método auxiliar para logar informações de autenticação
+  // Metodo auxiliar para logar informações de autenticação
   private void logAuthentication() {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     if (auth != null) {
