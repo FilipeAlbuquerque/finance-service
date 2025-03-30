@@ -14,6 +14,9 @@ services:
       - SPRING_JPA_SHOW_SQL=true
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - LOGGING_LEVEL_COM_EXAMPLE_FINANCESERVICE=DEBUG
+      - LOGGING_LEVEL_COM_EXAMPLE_FINANCESERVICE_CONTROLLER=DEBUG
+      - LOGGING_PATTERN_CONSOLE=%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %logger{36} - %msg%n
     depends_on:
       postgres:
         condition: service_healthy

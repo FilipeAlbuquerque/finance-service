@@ -165,6 +165,13 @@ class UserServiceTest {
     when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
       User user = invocation.getArgument(0);
       user.setId(2L);
+      user.setUsername("newuser");
+      user.setEmail("new@example.com");
+      user.setPassword("encodedPassword");
+      user.setFirstName("admin");
+      user.setLastName("albuquerque");
+      user.setEnabled(true);
+
       return user;
     });
 
@@ -178,6 +185,8 @@ class UserServiceTest {
     assertEquals("newuser", result.getUsername());
     assertEquals("encodedPassword", result.getPassword());
     assertEquals("new@example.com", result.getEmail());
+    assertEquals("admin", result.getFirstName());
+    assertEquals("albuquerque", result.getLastName());
     assertTrue(result.getRoles().contains("ROLE_USER"));
     verify(userRepository, times(1)).save(any(User.class));
   }

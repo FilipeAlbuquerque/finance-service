@@ -1,4 +1,4 @@
-package com.example.financeservice.security.service;
+package com.example.financeservice.security;
 
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.User;

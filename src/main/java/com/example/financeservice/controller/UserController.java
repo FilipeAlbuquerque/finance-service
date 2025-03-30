@@ -2,7 +2,7 @@ package com.example.financeservice.controller;
 
 
 import com.example.financeservice.dto.auth.UserProfileUpdateDTO;
-import com.example.financeservice.security.service.SecurityService;
+import com.example.financeservice.security.SecurityService;
 import com.example.financeservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
