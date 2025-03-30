@@ -25,7 +25,7 @@ public class UserController {
 
   @PutMapping("/profile")
   @PreAuthorize("isAuthenticated()")
-  public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UserProfileUpdateDTO profileDTO) {
+  public ResponseEntity<String> updateUserProfile(@Valid @RequestBody UserProfileUpdateDTO profileDTO) {
     try {
       Long userId = securityService.getCurrentUserId();
       userService.updateUser(

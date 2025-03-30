@@ -6,45 +6,50 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.math.BigDecimal;
 import java.util.function.Supplier;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * Serviço centralizado para registro de métricas do Finance Service. Fornece métodos para registrar
- * diversas métricas de negócio e técnicas.
+ * Centralized service for Finance Service metrics registration. Provides methods to record
+ * various business and technical metrics.
  */
 @Service
 @Slf4j
 public class MetricsService {
 
+  private static final String OPERATION_TYPE_DEPOSIT = "DEPOSIT";
+  private static final String OPERATION_TYPE_WITHDRAWAL = "WITHDRAWAL";
+  private static final String OPERATION_TYPE_TRANSFER = "TRANSFER";
+  private static final String STATUS_TAG = "status";
+  private static final String SUCCESS_TAG_VALUE = "success";
+  private static final String FAILED_TAG_VALUE = "failed";
+  private static final String FINANCE_DAILY_VOLUME = "finance.daily_volume";
+
+  @Getter
   private final MeterRegistry registry;
 
-  // Métricas de conta
+  // Account metrics
   private final Counter accountCreationCounter;
   private final Counter accountStatusUpdateCounter;
 
-  // Métricas de cliente
+  // Client metrics
   private final Counter clientCreationCounter;
   private final Counter clientUpdateCounter;
   private final Counter clientDeletionCounter;
 
-  // Métricas de transações
+  // Transaction metrics
   private final Counter transactionCounter;
   private final DistributionSummary transactionAmounts;
   private final Counter successfulTransactionCounter;
   private final Counter failedTransactionCounter;
 
-  // Métricas de operações financeiras
+  // Financial operation metrics
   private final DistributionSummary depositAmounts;
   private final DistributionSummary withdrawalAmounts;
   private final DistributionSummary transferAmounts;
 
-  // Métricas de performance
-  private final Timer serviceExecutionTimer;
-  private final Timer repositoryExecutionTimer;
-  private final Counter exceptionCounter;
-
-  // Counters para volumes financeiros diários
+  // Daily financial volume counters
   private final Counter depositVolumeCounter;
   private final Counter withdrawalVolumeCounter;
   private final Counter transferVolumeCounter;
@@ -52,103 +57,88 @@ public class MetricsService {
   public MetricsService(MeterRegistry registry) {
     this.registry = registry;
 
-    // Inicialização das métricas de conta
+    // Initialize account metrics
     this.accountCreationCounter = Counter.builder("finance.accounts.created")
-        .description("Número total de contas criadas")
+        .description("Total number of created accounts")
         .register(registry);
 
     this.accountStatusUpdateCounter = Counter.builder("finance.accounts.status_updated")
-        .description("Número total de atualizações de status de contas")
+        .description("Total number of account status updates")
         .register(registry);
 
-    // Inicialização das métricas de cliente
+    // Initialize client metrics
     this.clientCreationCounter = Counter.builder("finance.clients.created")
-        .description("Número total de clientes criados")
+        .description("Total number of created clients")
         .register(registry);
 
     this.clientUpdateCounter = Counter.builder("finance.clients.updated")
-        .description("Número total de atualizações de clientes")
+        .description("Total number of client updates")
         .register(registry);
 
     this.clientDeletionCounter = Counter.builder("finance.clients.deleted")
-        .description("Número total de exclusões de clientes")
+        .description("Total number of client deletions")
         .register(registry);
 
-    // Inicialização das métricas de transações
+    // Initialize transaction metrics
     this.transactionCounter = Counter.builder("finance.transactions.count")
-        .description("Número total de transações processadas")
+        .description("Total number of processed transactions")
         .register(registry);
 
     this.transactionAmounts = DistributionSummary.builder("finance.transactions.amount")
-        .description("Distribuição dos valores das transações")
+        .description("Distribution of transaction amounts")
         .baseUnit("BRL")
         .publishPercentiles(0.5, 0.75, 0.95, 0.99)
         .register(registry);
 
     this.successfulTransactionCounter = Counter.builder("finance.transactions.result")
-        .tag("status", "success")
-        .description("Número de transações bem-sucedidas")
+        .tag(STATUS_TAG, SUCCESS_TAG_VALUE)
+        .description("Number of successful transactions")
         .register(registry);
 
     this.failedTransactionCounter = Counter.builder("finance.transactions.result")
-        .tag("status", "failed")
-        .description("Número de transações que falharam")
+        .tag(STATUS_TAG, FAILED_TAG_VALUE)
+        .description("Number of failed transactions")
         .register(registry);
 
-    // Inicialização das métricas de operações financeiras
+    // Initialize financial operation metrics
     this.depositAmounts = DistributionSummary.builder("finance.operations.deposit.amount")
-        .description("Distribuição dos valores de depósitos")
+        .description("Distribution of deposit amounts")
         .baseUnit("BRL")
         .publishPercentiles(0.5, 0.75, 0.95, 0.99)
         .register(registry);
 
     this.withdrawalAmounts = DistributionSummary.builder("finance.operations.withdrawal.amount")
-        .description("Distribuição dos valores de saques")
+        .description("Distribution of withdrawal amounts")
         .baseUnit("BRL")
         .publishPercentiles(0.5, 0.75, 0.95, 0.99)
         .register(registry);
 
     this.transferAmounts = DistributionSummary.builder("finance.operations.transfer.amount")
-        .description("Distribuição dos valores de transferências")
+        .description("Distribution of transfer amounts")
         .baseUnit("BRL")
         .publishPercentiles(0.5, 0.75, 0.95, 0.99)
         .register(registry);
 
-    // Inicialização das métricas de performance
-    this.serviceExecutionTimer = Timer.builder("finance.performance.service")
-        .description("Tempo de execução de métodos de serviço")
-        .publishPercentiles(0.5, 0.95, 0.99)
+    // Initialize financial volume counters
+    this.depositVolumeCounter = Counter.builder(FINANCE_DAILY_VOLUME)
+        .tag("type", OPERATION_TYPE_DEPOSIT)
+        .description("Daily financial volume of deposits")
         .register(registry);
 
-    this.repositoryExecutionTimer = Timer.builder("finance.performance.repository")
-        .description("Tempo de execução de métodos de repositório")
-        .publishPercentiles(0.5, 0.95, 0.99)
+    this.withdrawalVolumeCounter = Counter.builder(FINANCE_DAILY_VOLUME)
+        .tag("type", OPERATION_TYPE_WITHDRAWAL)
+        .description("Daily financial volume of withdrawals")
         .register(registry);
 
-    this.exceptionCounter = Counter.builder("finance.exceptions")
-        .description("Contador de exceções por tipo")
+    this.transferVolumeCounter = Counter.builder(FINANCE_DAILY_VOLUME)
+        .tag("type", OPERATION_TYPE_TRANSFER)
+        .description("Daily financial volume of transfers")
         .register(registry);
 
-    // Counters para volume financeiro
-    this.depositVolumeCounter = Counter.builder("finance.daily_volume")
-        .tag("type", "DEPOSIT")
-        .description("Volume financeiro diário de depósitos")
-        .register(registry);
-
-    this.withdrawalVolumeCounter = Counter.builder("finance.daily_volume")
-        .tag("type", "WITHDRAWAL")
-        .description("Volume financeiro diário de saques")
-        .register(registry);
-
-    this.transferVolumeCounter = Counter.builder("finance.daily_volume")
-        .tag("type", "TRANSFER")
-        .description("Volume financeiro diário de transferências")
-        .register(registry);
-
-    log.info("MetricsService inicializado com sucesso");
+    log.info("MetricsService successfully initialized");
   }
 
-  // Métodos para registrar eventos de conta
+  // Methods for recording account events
   public void recordAccountCreated(String type, String ownerType) {
     accountCreationCounter.increment();
     Counter.builder("finance.accounts.created.detailed")
@@ -156,7 +146,7 @@ public class MetricsService {
         .tag("owner", ownerType)
         .register(registry)
         .increment();
-    log.debug("Métrica: Conta criada do tipo {} para {}", type, ownerType);
+    log.debug("Metric: Account created of type {} for {}", type, ownerType);
   }
 
   public void recordAccountStatusUpdate(String previousStatus, String newStatus) {
@@ -166,26 +156,26 @@ public class MetricsService {
         .tag("to", newStatus)
         .register(registry)
         .increment();
-    log.debug("Métrica: Status da conta atualizado de {} para {}", previousStatus, newStatus);
+    log.debug("Metric: Account status updated from {} to {}", previousStatus, newStatus);
   }
 
-  // Métodos para registrar eventos de cliente
+  // Methods for recording client events
   public void recordClientCreated() {
     clientCreationCounter.increment();
-    log.debug("Métrica: Cliente criado");
+    log.debug("Metric: Client created");
   }
 
   public void recordClientUpdated() {
     clientUpdateCounter.increment();
-    log.debug("Métrica: Cliente atualizado");
+    log.debug("Metric: Client updated");
   }
 
   public void recordClientDeleted() {
     clientDeletionCounter.increment();
-    log.debug("Métrica: Cliente excluído");
+    log.debug("Metric: Client deleted");
   }
 
-  // Métodos para registrar eventos de transação
+  // Methods for recording transaction events
   public void recordTransactionProcessed(String type, BigDecimal amount, boolean success) {
     transactionCounter.increment();
     transactionAmounts.record(amount.doubleValue());
@@ -193,33 +183,36 @@ public class MetricsService {
     if (success) {
       successfulTransactionCounter.increment();
 
-      // Registrar métricas específicas por tipo de transação
+      // Record specific metrics by transaction type
       switch (type) {
-        case "DEPOSIT":
+        case OPERATION_TYPE_DEPOSIT:
           depositAmounts.record(amount.doubleValue());
           break;
-        case "WITHDRAWAL":
+        case OPERATION_TYPE_WITHDRAWAL:
           withdrawalAmounts.record(amount.doubleValue());
           break;
-        case "TRANSFER":
+        case OPERATION_TYPE_TRANSFER:
           transferAmounts.record(amount.doubleValue());
+          break;
+        default:
+          log.warn("Unknown transaction type: {}", type);
           break;
       }
     } else {
       failedTransactionCounter.increment();
     }
 
-    // Contador específico por tipo de transação
+    // Specific counter by transaction type
     Counter.builder("finance.transactions.by_type")
         .tag("type", type)
         .register(registry)
         .increment();
 
-    log.debug("Métrica: Transação processada - tipo: {}, valor: {}, sucesso: {}",
+    log.debug("Metric: Transaction processed - type: {}, amount: {}, success: {}",
         type, amount, success);
   }
 
-  // Métodos para registrar métricas de performance
+  // Methods for recording performance metrics
   public <T> T recordServiceExecutionTime(String service, String method, Supplier<T> execution) {
     return Timer.builder("finance.performance.service")
         .tag("service", service)
@@ -243,10 +236,10 @@ public class MetricsService {
         .tag("operation", operationType)
         .register(registry)
         .increment();
-    log.debug("Métrica: Exceção ocorrida - tipo: {}, operação: {}", exceptionType, operationType);
+    log.debug("Metric: Exception occurred - type: {}, operation: {}", exceptionType, operationType);
   }
 
-  // Métodos para timer manual (para casos mais complexos)
+  // Methods for manual timer (for more complex cases)
   public Timer.Sample startTimer() {
     return Timer.start(registry);
   }
@@ -264,43 +257,42 @@ public class MetricsService {
     sample.stop(builder.register(registry));
   }
 
-  // Metodo para registrar volumes financeiros diários
+  // Method for recording daily financial volumes
   public void recordDailyFinancialVolume(String operationType, BigDecimal amount) {
     double value = amount.doubleValue();
 
     switch (operationType) {
-      case "DEPOSIT":
+      case OPERATION_TYPE_DEPOSIT:
         depositVolumeCounter.increment(value);
         break;
-      case "WITHDRAWAL":
+      case OPERATION_TYPE_WITHDRAWAL:
         withdrawalVolumeCounter.increment(value);
         break;
-      case "TRANSFER":
+      case OPERATION_TYPE_TRANSFER:
         transferVolumeCounter.increment(value);
+        break;
+      default:
+        log.warn("Unknown financial operation type: {}", operationType);
         break;
     }
 
-    log.debug("Métrica: Volume financeiro diário atualizado - tipo: {}, valor: {}",
+    log.debug("Metric: Daily financial volume updated - type: {}, amount: {}",
         operationType, amount);
   }
 
   public void recordSuccessfulLogin(String username) {
     Counter.builder("finance.authentication.login")
-        .tag("status", "success")
+        .tag(STATUS_TAG, SUCCESS_TAG_VALUE)
         .register(registry)
         .increment();
-    log.debug("Métrica: Login bem-sucedido para o usuário {}", username);
+    log.debug("Metric: Successful login for user {}", username);
   }
 
   public void recordFailedLogin(String username) {
     Counter.builder("finance.authentication.login")
-        .tag("status", "failed")
+        .tag(STATUS_TAG, FAILED_TAG_VALUE)
         .register(registry)
         .increment();
-    log.debug("Métrica: Falha de login para o usuário {}", username);
-  }
-
-  public MeterRegistry getRegistry() {
-    return this.registry;
+    log.debug("Metric: Failed login for user {}", username);
   }
 }

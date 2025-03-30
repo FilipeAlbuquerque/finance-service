@@ -431,7 +431,7 @@ class AccountServiceTest {
     assertEquals("Insufficient funds for withdrawal", exception.getMessage());
     verify(accountRepository, times(1)).findByAccountNumberWithLock("ACC123456");
     verify(accountRepository, never()).save(any(Account.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException", "withdraw");
+    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException", "withdrawal");
     verify(metricsService, times(1)).recordTransactionProcessed("WITHDRAWAL", withdrawAmount, false);
   }
 

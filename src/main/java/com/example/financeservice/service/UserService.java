@@ -25,6 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class UserService implements UserDetailsService {
 
+  // Define constants for exception names to avoid duplication
+  private static final String EXCEPTION_ILLEGAL_ARGUMENT = "IllegalArgumentException";
+  private static final String EXCEPTION_RESOURCE_NOT_FOUND = "ResourceNotFoundException";
+
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final MetricsService metricsService;
@@ -68,12 +72,12 @@ public class UserService implements UserDetailsService {
   public User createUser(String username, String password, String email, String firstName,
       String lastName, List<String> roles) {
     if (userRepository.existsByUsername(username)) {
-      metricsService.recordExceptionOccurred("IllegalArgumentException", "createUser");
+      metricsService.recordExceptionOccurred(EXCEPTION_ILLEGAL_ARGUMENT, "createUser");
       throw new IllegalArgumentException("Username already taken");
     }
 
     if (userRepository.existsByEmail(email)) {
-      metricsService.recordExceptionOccurred("IllegalArgumentException", "createUser");
+      metricsService.recordExceptionOccurred(EXCEPTION_ILLEGAL_ARGUMENT, "createUser");
       throw new IllegalArgumentException("Email already in use");
     }
 
@@ -112,7 +116,7 @@ public class UserService implements UserDetailsService {
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> {
           log.error("Email not found for password reset: {}", email);
-          metricsService.recordExceptionOccurred("ResourceNotFoundException",
+          metricsService.recordExceptionOccurred(EXCEPTION_RESOURCE_NOT_FOUND,
               "requestPasswordReset");
           return new ResourceNotFoundException("User not found with email: " + email);
         });
@@ -132,7 +136,7 @@ public class UserService implements UserDetailsService {
     User user = userRepository.findByPasswordResetToken(token)
         .orElseThrow(() -> {
           log.error("Invalid password reset token: {}", token);
-          metricsService.recordExceptionOccurred("ResourceNotFoundException", "resetPassword");
+          metricsService.recordExceptionOccurred(EXCEPTION_RESOURCE_NOT_FOUND, "resetPassword");
           return new ResourceNotFoundException("Invalid or expired token");
         });
 
@@ -155,14 +159,14 @@ public class UserService implements UserDetailsService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> {
           log.error("User not found with id: {}", userId);
-          metricsService.recordExceptionOccurred("ResourceNotFoundException", "updateUser");
+          metricsService.recordExceptionOccurred(EXCEPTION_RESOURCE_NOT_FOUND, "updateUser");
           return new ResourceNotFoundException("User not found with id: " + userId);
         });
 
     if (email != null && !email.equals(user.getEmail())) {
       if (userRepository.existsByEmail(email)) {
         log.error("Email already in use: {}", email);
-        metricsService.recordExceptionOccurred("IllegalArgumentException", "updateUser");
+        metricsService.recordExceptionOccurred(EXCEPTION_ILLEGAL_ARGUMENT, "updateUser");
         throw new IllegalArgumentException("Email already in use");
       }
       user.setEmail(email);

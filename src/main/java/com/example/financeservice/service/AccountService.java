@@ -23,6 +23,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AccountService {
 
+  private static final String WITHDRAWAL = "withdrawal";
+  private static final String WITHDRAWAL_METRIC = "WITHDRAWAL";
+  private static final String DEPOSIT_METRIC = "DEPOSIT";
+  private static final String ACCOUNT_REPOSITORY_METRIC = "AccountRepository";
+  private static final String FIND_BY_ID = "findById";
+  private static final String ACCOUNT_NOT_FOUND = "Service: Account not found with number: {}";
+  private static final String ACCOUNT_NUMBER_NOT_FOUND = "Account not found with number: ";
+  private static final String RESOURCE_NOT_FOUND = "ResourceNotFoundException";
+
   private final AccountRepository accountRepository;
   private final ClientRepository clientRepository;
   private final MerchantRepository merchantRepository;
@@ -33,8 +42,8 @@ public class AccountService {
     log.debug("Service: Getting all accounts");
 
     List<Account> accounts = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findAll",
-        () -> accountRepository.findAll());
+        ACCOUNT_REPOSITORY_METRIC, "findAll",
+        accountRepository::findAll);
 
     log.debug("Service: Found {} accounts in database", accounts.size());
 
@@ -48,11 +57,11 @@ public class AccountService {
     log.debug("Service: Getting account with ID: {}", id);
 
     Account account = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findById",
+        ACCOUNT_REPOSITORY_METRIC, FIND_BY_ID,
         () -> accountRepository.findById(id)
             .orElseThrow(() -> {
               log.error("Service: Account not found with ID: {}", id);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getAccountById");
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, "getAccountById");
               return new ResourceNotFoundException("Account not found with id: " + id);
             }));
 
@@ -65,14 +74,14 @@ public class AccountService {
     log.debug("Service: Getting account with number: {}", accountNumber);
 
     Account account = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findByAccountNumber",
+        ACCOUNT_REPOSITORY_METRIC, "findByAccountNumber",
         () -> accountRepository.findByAccountNumber(accountNumber)
             .orElseThrow(() -> {
-              log.error("Service: Account not found with number: {}", accountNumber);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              log.error(ACCOUNT_NOT_FOUND, accountNumber);
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "getAccountByNumber");
               return new ResourceNotFoundException(
-                  "Account not found with number: " + accountNumber);
+                  ACCOUNT_NUMBER_NOT_FOUND + accountNumber);
             }));
 
     log.debug("Service: Found account with number: {}, ID: {}", accountNumber, account.getId());
@@ -84,17 +93,17 @@ public class AccountService {
     log.debug("Service: Getting accounts for client with ID: {}", clientId);
 
     Client client = metricsService.recordRepositoryExecutionTime(
-        "ClientRepository", "findById",
+        "ClientRepository", FIND_BY_ID,
         () -> clientRepository.findById(clientId)
             .orElseThrow(() -> {
               log.error("Service: Client not found with ID: {}", clientId);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "getAccountsByClient");
               return new ResourceNotFoundException("Client not found with id: " + clientId);
             }));
 
     List<Account> accounts = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findByClient",
+        ACCOUNT_REPOSITORY_METRIC, "findByClient",
         () -> accountRepository.findByClient(client));
 
     log.debug("Service: Found {} accounts for client with ID: {}", accounts.size(), clientId);
@@ -109,17 +118,17 @@ public class AccountService {
     log.debug("Service: Getting accounts for merchant with ID: {}", merchantId);
 
     Merchant merchant = metricsService.recordRepositoryExecutionTime(
-        "MerchantRepository", "findById",
+        "MerchantRepository", FIND_BY_ID,
         () -> merchantRepository.findById(merchantId)
             .orElseThrow(() -> {
               log.error("Service: Merchant not found with ID: {}", merchantId);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "getAccountsByMerchant");
               return new ResourceNotFoundException("Merchant not found with id: " + merchantId);
             }));
 
     List<Account> accounts = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findByMerchant",
+        ACCOUNT_REPOSITORY_METRIC, "findByMerchant",
         () -> accountRepository.findByMerchant(merchant));
 
     log.debug("Service: Found {} accounts for merchant with ID: {}", accounts.size(), merchantId);
@@ -134,11 +143,11 @@ public class AccountService {
     log.debug("Service: Creating account for client with ID: {}", createAccountDTO.getOwnerId());
 
     Client client = metricsService.recordRepositoryExecutionTime(
-        "ClientRepository", "findById",
+        "ClientRepository", FIND_BY_ID,
         () -> clientRepository.findById(createAccountDTO.getOwnerId())
             .orElseThrow(() -> {
               log.error("Service: Client not found with ID: {}", createAccountDTO.getOwnerId());
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "createClientAccount");
               return new ResourceNotFoundException(
                   "Client not found with id: " + createAccountDTO.getOwnerId());
@@ -163,7 +172,7 @@ public class AccountService {
     }
 
     Account savedAccount = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "save",
+        ACCOUNT_REPOSITORY_METRIC, "save",
         () -> accountRepository.save(account));
 
     log.info(
@@ -176,9 +185,10 @@ public class AccountService {
     // Registrar o depósito inicial se houver
     if (createAccountDTO.getInitialDeposit() != null
         && createAccountDTO.getInitialDeposit().compareTo(BigDecimal.ZERO) > 0) {
-      metricsService.recordTransactionProcessed("DEPOSIT",
+      metricsService.recordTransactionProcessed(DEPOSIT_METRIC,
           createAccountDTO.getInitialDeposit(), true);
-      metricsService.recordDailyFinancialVolume("DEPOSIT", createAccountDTO.getInitialDeposit());
+      metricsService.recordDailyFinancialVolume(DEPOSIT_METRIC,
+          createAccountDTO.getInitialDeposit());
     }
 
     return convertToDTO(savedAccount);
@@ -189,11 +199,11 @@ public class AccountService {
     log.debug("Service: Creating account for merchant with ID: {}", createAccountDTO.getOwnerId());
 
     Merchant merchant = metricsService.recordRepositoryExecutionTime(
-        "MerchantRepository", "findById",
+        "MerchantRepository", FIND_BY_ID,
         () -> merchantRepository.findById(createAccountDTO.getOwnerId())
             .orElseThrow(() -> {
               log.error("Service: Merchant not found with ID: {}", createAccountDTO.getOwnerId());
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "createMerchantAccount");
               return new ResourceNotFoundException(
                   "Merchant not found with id: " + createAccountDTO.getOwnerId());
@@ -218,7 +228,7 @@ public class AccountService {
     }
 
     Account savedAccount = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "save",
+        ACCOUNT_REPOSITORY_METRIC, "save",
         () -> accountRepository.save(account));
 
     log.info(
@@ -231,9 +241,10 @@ public class AccountService {
     // Registrar o depósito inicial se houver
     if (createAccountDTO.getInitialDeposit() != null
         && createAccountDTO.getInitialDeposit().compareTo(BigDecimal.ZERO) > 0) {
-      metricsService.recordTransactionProcessed("DEPOSIT",
+      metricsService.recordTransactionProcessed(DEPOSIT_METRIC,
           createAccountDTO.getInitialDeposit(), true);
-      metricsService.recordDailyFinancialVolume("DEPOSIT", createAccountDTO.getInitialDeposit());
+      metricsService.recordDailyFinancialVolume(DEPOSIT_METRIC,
+          createAccountDTO.getInitialDeposit());
     }
 
     return convertToDTO(savedAccount);
@@ -250,19 +261,19 @@ public class AccountService {
     }
 
     Account account = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findByAccountNumberWithLock",
+        ACCOUNT_REPOSITORY_METRIC, "findByAccountNumberWithLock",
         () -> accountRepository.findByAccountNumberWithLock(accountNumber)
             .orElseThrow(() -> {
-              log.error("Service: Account not found with number: {}", accountNumber);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException", "deposit");
+              log.error(ACCOUNT_NOT_FOUND, accountNumber);
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, "deposit");
               return new ResourceNotFoundException(
-                  "Account not found with number: " + accountNumber);
+                  ACCOUNT_NUMBER_NOT_FOUND + accountNumber);
             }));
 
     BigDecimal previousBalance = account.getBalance();
     account.setBalance(previousBalance.add(amount));
     Account updatedAccount = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "save",
+        ACCOUNT_REPOSITORY_METRIC, "save",
         () -> accountRepository.save(account));
 
     log.info(
@@ -270,8 +281,8 @@ public class AccountService {
         accountNumber, amount, previousBalance, updatedAccount.getBalance());
 
     // Registrar métricas de depósito
-    metricsService.recordTransactionProcessed("DEPOSIT", amount, true);
-    metricsService.recordDailyFinancialVolume("DEPOSIT", amount);
+    metricsService.recordTransactionProcessed(DEPOSIT_METRIC, amount, true);
+    metricsService.recordDailyFinancialVolume(DEPOSIT_METRIC, amount);
 
     return convertToDTO(updatedAccount);
   }
@@ -282,33 +293,33 @@ public class AccountService {
 
     if (amount.compareTo(BigDecimal.ZERO) <= 0) {
       log.warn("Service: Invalid withdrawal amount: {}", amount);
-      metricsService.recordExceptionOccurred("IllegalArgumentException", "withdraw");
+      metricsService.recordExceptionOccurred("IllegalArgumentException", WITHDRAWAL);
       throw new IllegalArgumentException("Withdrawal amount must be positive");
     }
 
     Account account = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findByAccountNumberWithLock",
+        ACCOUNT_REPOSITORY_METRIC, "findByAccountNumberWithLock",
         () -> accountRepository.findByAccountNumberWithLock(accountNumber)
             .orElseThrow(() -> {
-              log.error("Service: Account not found with number: {}", accountNumber);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException", "withdraw");
+              log.error(ACCOUNT_NOT_FOUND, accountNumber);
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, WITHDRAWAL);
               return new ResourceNotFoundException(
-                  "Account not found with number: " + accountNumber);
+                  ACCOUNT_NUMBER_NOT_FOUND + accountNumber);
             }));
 
     if (account.getBalance().compareTo(amount) < 0) {
       log.warn(
           "Service: Insufficient funds for withdrawal. Account: {}, balance: {}, requested amount: {}",
           accountNumber, account.getBalance(), amount);
-      metricsService.recordExceptionOccurred("InsufficientFundsException", "withdraw");
-      metricsService.recordTransactionProcessed("WITHDRAWAL", amount, false);
+      metricsService.recordExceptionOccurred("InsufficientFundsException", WITHDRAWAL);
+      metricsService.recordTransactionProcessed(WITHDRAWAL_METRIC, amount, false);
       throw new InsufficientFundsException("Insufficient funds for withdrawal");
     }
 
     BigDecimal previousBalance = account.getBalance();
     account.setBalance(previousBalance.subtract(amount));
     Account updatedAccount = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "save",
+        ACCOUNT_REPOSITORY_METRIC, "save",
         () -> accountRepository.save(account));
 
     log.info(
@@ -316,8 +327,8 @@ public class AccountService {
         accountNumber, amount, previousBalance, updatedAccount.getBalance());
 
     // Registrar métricas de saque
-    metricsService.recordTransactionProcessed("WITHDRAWAL", amount, true);
-    metricsService.recordDailyFinancialVolume("WITHDRAWAL", amount);
+    metricsService.recordTransactionProcessed(WITHDRAWAL_METRIC, amount, true);
+    metricsService.recordDailyFinancialVolume(WITHDRAWAL_METRIC, amount);
 
     return convertToDTO(updatedAccount);
   }
@@ -327,11 +338,11 @@ public class AccountService {
     log.debug("Service: Updating status of account with ID: {} to {}", id, status);
 
     Account account = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "findById",
+        ACCOUNT_REPOSITORY_METRIC, FIND_BY_ID,
         () -> accountRepository.findById(id)
             .orElseThrow(() -> {
               log.error("Service: Account not found with ID: {}", id);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException",
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND,
                   "updateAccountStatus");
               return new ResourceNotFoundException("Account not found with id: " + id);
             }));
@@ -339,7 +350,7 @@ public class AccountService {
     Account.AccountStatus previousStatus = account.getStatus();
     account.setStatus(status);
     Account updatedAccount = metricsService.recordRepositoryExecutionTime(
-        "AccountRepository", "save",
+        ACCOUNT_REPOSITORY_METRIC, "save",
         () -> accountRepository.save(account));
 
     log.info(

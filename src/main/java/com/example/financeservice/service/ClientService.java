@@ -16,6 +16,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ClientService {
 
+  private static final String REPOSITORY_NAME = "ClientRepository";
+  private static final String CLIENT_NOT_FOUND_ID = "Client not found with id: ";
+  private static final String CLIENT_NOT_FOUND_EMAIL = "Client not found with email: ";
+  private static final String CLIENT_EMAIL_EXISTS = "Client with email %s already exists";
+  private static final String CLIENT_DOCUMENT_EXISTS = "Client with document number %s already exists";
+  private static final String CLIENT_NOT_FOUND_FOR_THIS_ID = "Service: Client not found with ID: {}";
+  private static final String FIND_BY_ID = "findById";
+  private static final String SAVE = "save";
+  private static final String DELETE = "delete";
+  private static final String RESOURCE_NOT_FOUND = "ResourceNotFoundException";
+  private static final String RESOURCE_ALREADY_EXISTS = "ResourceAlreadyExistsException";
+  private static final String CREATE_CLIENT = "createClient";
+  private static final String UPDATE_CLIENT = "updateClient";
+  private static final String DELETE_CLIENT = "deleteClient";
+
   private final ClientRepository clientRepository;
   private final MetricsService metricsService;
 
@@ -24,7 +39,7 @@ public class ClientService {
     log.debug("Service: Getting all clients");
 
     List<Client> clients = metricsService.recordRepositoryExecutionTime(
-        "ClientRepository", "findAll",
+        REPOSITORY_NAME, "findAll",
         clientRepository::findAll);
 
     log.debug("Service: Found {} clients in database", clients.size());
@@ -39,12 +54,12 @@ public class ClientService {
     log.debug("Service: Getting client with ID: {}", id);
 
     Client client = metricsService.recordRepositoryExecutionTime(
-        "ClientRepository", "findById",
+        REPOSITORY_NAME, FIND_BY_ID,
         () -> clientRepository.findById(id)
             .orElseThrow(() -> {
-              log.error("Service: Client not found with ID: {}", id);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getClientById");
-              return new ResourceNotFoundException("Client not found with id: " + id);
+              log.error(CLIENT_NOT_FOUND_FOR_THIS_ID, id);
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, "getClientById");
+              return new ResourceNotFoundException(CLIENT_NOT_FOUND_ID + id);
             }));
 
     log.debug("Service: Found client with ID: {}, name: {}", id, client.getName());
@@ -56,12 +71,12 @@ public class ClientService {
     log.debug("Service: Getting client with email: {}", email);
 
     Client client = metricsService.recordRepositoryExecutionTime(
-        "ClientRepository", "findByEmail",
+        REPOSITORY_NAME, "findByEmail",
         () -> clientRepository.findByEmail(email)
             .orElseThrow(() -> {
               log.error("Service: Client not found with email: {}", email);
-              metricsService.recordExceptionOccurred("ResourceNotFoundException", "getClientByEmail");
-              return new ResourceNotFoundException("Client not found with email: " + email);
+              metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, "getClientByEmail");
+              return new ResourceNotFoundException(CLIENT_NOT_FOUND_EMAIL + email);
             }));
 
     log.debug("Service: Found client with email: {}, name: {}", email, client.getName());
@@ -78,29 +93,29 @@ public class ClientService {
     try {
       // Check if client with same email already exists
       boolean emailExists = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "existsByEmail",
+          REPOSITORY_NAME, "existsByEmail",
           () -> clientRepository.existsByEmail(clientDTO.getEmail()));
 
       if (emailExists) {
         log.warn("Service: Client with email {} already exists", clientDTO.getEmail());
-        metricsService.recordExceptionOccurred("ResourceAlreadyExistsException", "createClient");
-        throw new ResourceAlreadyExistsException("Client with email " + clientDTO.getEmail() + " already exists");
+        metricsService.recordExceptionOccurred(RESOURCE_ALREADY_EXISTS, CREATE_CLIENT);
+        throw new ResourceAlreadyExistsException(String.format(CLIENT_EMAIL_EXISTS, clientDTO.getEmail()));
       }
 
       // Check if client with same document number already exists
       boolean documentExists = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "existsByDocumentNumber",
+          REPOSITORY_NAME, "existsByDocumentNumber",
           () -> clientRepository.existsByDocumentNumber(clientDTO.getDocumentNumber()));
 
       if (documentExists) {
         log.warn("Service: Client with document number {} already exists", clientDTO.getDocumentNumber());
-        metricsService.recordExceptionOccurred("ResourceAlreadyExistsException", "createClient");
-        throw new ResourceAlreadyExistsException("Client with document number " + clientDTO.getDocumentNumber() + " already exists");
+        metricsService.recordExceptionOccurred(RESOURCE_ALREADY_EXISTS, CREATE_CLIENT);
+        throw new ResourceAlreadyExistsException(String.format(CLIENT_DOCUMENT_EXISTS, clientDTO.getDocumentNumber()));
       }
 
       Client client = convertToEntity(clientDTO);
       Client savedClient = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "save",
+          REPOSITORY_NAME, SAVE,
           () -> clientRepository.save(client));
 
       log.info("Service: Client created successfully with ID: {}, email: {}", savedClient.getId(), savedClient.getEmail());
@@ -123,32 +138,42 @@ public class ClientService {
 
     try {
       Client existingClient = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "findById",
+          REPOSITORY_NAME, FIND_BY_ID,
           () -> clientRepository.findById(id)
               .orElseThrow(() -> {
-                log.error("Service: Client not found with ID: {}", id);
-                metricsService.recordExceptionOccurred("ResourceNotFoundException", "updateClient");
-                return new ResourceNotFoundException("Client not found with id: " + id);
+                log.error(CLIENT_NOT_FOUND_FOR_THIS_ID, id);
+                metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, UPDATE_CLIENT);
+                return new ResourceNotFoundException(CLIENT_NOT_FOUND_ID + id);
               }));
 
       // Check if email is changed and if it's already in use
-      if (!existingClient.getEmail().equals(clientDTO.getEmail()) &&
-          metricsService.recordRepositoryExecutionTime(
-              "ClientRepository", "existsByEmail",
-              () -> clientRepository.existsByEmail(clientDTO.getEmail()))) {
-        log.warn("Service: Cannot update client - email {} is already in use", clientDTO.getEmail());
-        metricsService.recordExceptionOccurred("ResourceAlreadyExistsException", "updateClient");
-        throw new ResourceAlreadyExistsException("Client with email " + clientDTO.getEmail() + " already exists");
+      boolean emailChanged = !existingClient.getEmail().equals(clientDTO.getEmail());
+
+      if (emailChanged) {
+        boolean emailExists = metricsService.recordRepositoryExecutionTime(
+            REPOSITORY_NAME, "existsByEmail",
+            () -> clientRepository.existsByEmail(clientDTO.getEmail()));
+
+        if (emailExists) {
+          log.warn("Service: Cannot update client - email {} is already in use", clientDTO.getEmail());
+          metricsService.recordExceptionOccurred(RESOURCE_ALREADY_EXISTS, UPDATE_CLIENT);
+          throw new ResourceAlreadyExistsException(String.format(CLIENT_EMAIL_EXISTS, clientDTO.getEmail()));
+        }
       }
 
       // Check if document number is changed and if it's already in use
-      if (!existingClient.getDocumentNumber().equals(clientDTO.getDocumentNumber()) &&
-          metricsService.recordRepositoryExecutionTime(
-              "ClientRepository", "existsByDocumentNumber",
-              () -> clientRepository.existsByDocumentNumber(clientDTO.getDocumentNumber()))) {
-        log.warn("Service: Cannot update client - document number {} is already in use", clientDTO.getDocumentNumber());
-        metricsService.recordExceptionOccurred("ResourceAlreadyExistsException", "updateClient");
-        throw new ResourceAlreadyExistsException("Client with document number " + clientDTO.getDocumentNumber() + " already exists");
+      boolean documentChanged = !existingClient.getDocumentNumber().equals(clientDTO.getDocumentNumber());
+
+      if (documentChanged) {
+        boolean documentExists = metricsService.recordRepositoryExecutionTime(
+            REPOSITORY_NAME, "existsByDocumentNumber",
+            () -> clientRepository.existsByDocumentNumber(clientDTO.getDocumentNumber()));
+
+        if (documentExists) {
+          log.warn("Service: Cannot update client - document number {} is already in use", clientDTO.getDocumentNumber());
+          metricsService.recordExceptionOccurred(RESOURCE_ALREADY_EXISTS, UPDATE_CLIENT);
+          throw new ResourceAlreadyExistsException(String.format(CLIENT_DOCUMENT_EXISTS, clientDTO.getDocumentNumber()));
+        }
       }
 
       // Update fields
@@ -159,7 +184,7 @@ public class ClientService {
       existingClient.setAddress(clientDTO.getAddress());
 
       Client updatedClient = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "save",
+          REPOSITORY_NAME, SAVE,
           () -> clientRepository.save(existingClient));
 
       log.info("Service: Client updated successfully with ID: {}", updatedClient.getId());
@@ -182,16 +207,16 @@ public class ClientService {
 
     try {
       Client client = metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "findById",
+          REPOSITORY_NAME, FIND_BY_ID,
           () -> clientRepository.findById(id)
               .orElseThrow(() -> {
-                log.error("Service: Client not found with ID: {}", id);
-                metricsService.recordExceptionOccurred("ResourceNotFoundException", "deleteClient");
-                return new ResourceNotFoundException("Client not found with id: " + id);
+                log.error(CLIENT_NOT_FOUND_FOR_THIS_ID, id);
+                metricsService.recordExceptionOccurred(RESOURCE_NOT_FOUND, DELETE_CLIENT);
+                return new ResourceNotFoundException(CLIENT_NOT_FOUND_ID + id);
               }));
 
       metricsService.recordRepositoryExecutionTime(
-          "ClientRepository", "delete",
+          REPOSITORY_NAME, DELETE,
           () -> {
             clientRepository.delete(client);
             return null;

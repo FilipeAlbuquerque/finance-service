@@ -44,7 +44,7 @@ public class AuthController {
   private final UserService userService;
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody AuthRequestDTO request) {
+  public ResponseEntity<Object> login(@RequestBody AuthRequestDTO request) {
     log.info("Authentication attempt for user: {}", request.getUsername());
 
     // Verificar se o usuário está bloqueado por tentativas excessivas

@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +27,7 @@ public class ClientController {
   private final ClientService clientService;
 
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<ClientDTO>> getAllClients() {
     log.info("API Request: Fetching all clients");
 
@@ -44,7 +42,7 @@ public class ClientController {
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ClientDTO> getClientById(@PathVariable Long id) {
     log.info("API Request: Fetching client with ID: {}", id);
 
@@ -59,7 +57,7 @@ public class ClientController {
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ClientDTO> createClient(@Valid @RequestBody ClientDTO clientDTO) {
     log.info("API Request: Creating new client with email: {}", clientDTO.getEmail());
 
@@ -75,7 +73,7 @@ public class ClientController {
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<ClientDTO> updateClient(@PathVariable Long id,
       @Valid @RequestBody ClientDTO clientDTO) {
     log.info("API Request: Updating client with ID: {}", id);
@@ -92,7 +90,7 @@ public class ClientController {
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') or hasAuthority('ROLE_ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
     log.info("API Request: Deleting client with ID: {}", id);
 
@@ -103,17 +101,6 @@ public class ClientController {
     } catch (Exception e) {
       log.error("API Error: Failed to delete client with ID: {}", id, e);
       throw e;
-    }
-  }
-
-  // Metodo auxiliar para logar informações de autenticação
-  private void logAuthentication() {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null) {
-      log.debug("Authentication: User={}, Authenticated={}, Authorities={}",
-          auth.getName(), auth.isAuthenticated(), auth.getAuthorities());
-    } else {
-      log.debug("Authentication: No security context available");
     }
   }
 }

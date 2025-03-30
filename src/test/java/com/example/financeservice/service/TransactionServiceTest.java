@@ -67,12 +67,14 @@ class TransactionServiceTest {
     doAnswer(invocation -> {
       Supplier<?> supplier = invocation.getArgument(2);
       return supplier.get();
-    }).when(metricsService).recordRepositoryExecutionTime(anyString(), anyString(), any(Supplier.class));
+    }).when(metricsService)
+        .recordRepositoryExecutionTime(anyString(), anyString(), any(Supplier.class));
 
     when(metricsService.startTimer()).thenReturn(timerSample);
     doNothing().when(metricsService).stopTimer(any(Timer.Sample.class), anyString(), any());
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
-    doNothing().when(metricsService).recordTransactionProcessed(anyString(), any(BigDecimal.class), anyBoolean());
+    doNothing().when(metricsService)
+        .recordTransactionProcessed(anyString(), any(BigDecimal.class), anyBoolean());
     doNothing().when(metricsService).recordDailyFinancialVolume(anyString(), any(BigDecimal.class));
 
     // Configurar dados de teste
@@ -154,14 +156,16 @@ class TransactionServiceTest {
 
     assertEquals("Transaction not found with id: 999", exception.getMessage());
     verify(transactionRepository, times(1)).findById(999L);
-    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException", "getTransactionById");
+    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException",
+        "getTransactionById");
   }
 
   @Test
   void getTransactionByTransactionId_WithValidId_ShouldReturnTransaction() {
     // Arrange
     String transactionId = transaction.getTransactionId();
-    when(transactionRepository.findByTransactionId(transactionId)).thenReturn(Optional.of(transaction));
+    when(transactionRepository.findByTransactionId(transactionId)).thenReturn(
+        Optional.of(transaction));
 
     // Act
     TransactionDTO result = transactionService.getTransactionByTransactionId(transactionId);
@@ -175,7 +179,8 @@ class TransactionServiceTest {
   @Test
   void getTransactionsByAccount_WithValidAccountNumber_ShouldReturnTransactions() {
     // Arrange
-    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
     when(transactionRepository.findByAccount(sourceAccount)).thenReturn(List.of(transaction));
 
     // Act
@@ -195,11 +200,14 @@ class TransactionServiceTest {
     Pageable pageable = PageRequest.of(0, 10);
     Page<Transaction> transactionPage = new PageImpl<>(List.of(transaction), pageable, 1);
 
-    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
-    when(transactionRepository.findByAccountPaginated(sourceAccount, pageable)).thenReturn(transactionPage);
+    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
+    when(transactionRepository.findByAccountPaginated(sourceAccount, pageable)).thenReturn(
+        transactionPage);
 
     // Act
-    Page<TransactionDTO> result = transactionService.getTransactionsByAccountPaginated("SOURCE-ACC-123", pageable);
+    Page<TransactionDTO> result = transactionService.getTransactionsByAccountPaginated(
+        "SOURCE-ACC-123", pageable);
 
     // Assert
     assertNotNull(result);
@@ -215,11 +223,14 @@ class TransactionServiceTest {
     LocalDateTime startDate = LocalDateTime.now().minusDays(30);
     LocalDateTime endDate = LocalDateTime.now();
 
-    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
-    when(transactionRepository.findByAccountAndDateRange(sourceAccount, startDate, endDate)).thenReturn(List.of(transaction));
+    when(accountRepository.findByAccountNumber("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
+    when(transactionRepository.findByAccountAndDateRange(sourceAccount, startDate,
+        endDate)).thenReturn(List.of(transaction));
 
     // Act
-    StatementDTO result = transactionService.getAccountStatement("SOURCE-ACC-123", startDate, endDate);
+    StatementDTO result = transactionService.getAccountStatement("SOURCE-ACC-123", startDate,
+        endDate);
 
     // Assert
     assertNotNull(result);
@@ -228,14 +239,17 @@ class TransactionServiceTest {
     assertEquals(sourceAccount.getBalance(), result.getCurrentBalance());
     assertEquals(1, result.getTransactions().size());
     verify(accountRepository, times(1)).findByAccountNumber("SOURCE-ACC-123");
-    verify(transactionRepository, times(1)).findByAccountAndDateRange(sourceAccount, startDate, endDate);
+    verify(transactionRepository, times(1)).findByAccountAndDateRange(sourceAccount, startDate,
+        endDate);
   }
 
   @Test
   void transfer_WithValidParams_ShouldCompleteTransferSuccessfully() {
     // Arrange
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
-    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(Optional.of(destinationAccount));
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(
+        Optional.of(destinationAccount));
 
     Transaction pendingTransaction = new Transaction();
     pendingTransaction.setId(1L);
@@ -245,7 +259,8 @@ class TransactionServiceTest {
     pendingTransaction.setStatus(Transaction.TransactionStatus.PENDING);
 
     when(transactionRepository.save(any(Transaction.class))).thenReturn(pendingTransaction);
-    when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(accountRepository.save(any(Account.class))).thenAnswer(
+        invocation -> invocation.getArgument(0));
 
     // Act
     TransactionDTO result = transactionService.transfer(transferDTO);
@@ -261,8 +276,10 @@ class TransactionServiceTest {
     verify(transactionRepository, times(2)).save(any(Transaction.class));
     verify(accountRepository, times(1)).save(sourceAccount);
     verify(accountRepository, times(1)).save(destinationAccount);
-    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER", new BigDecimal("200.00"), true);
-    verify(metricsService, times(1)).recordDailyFinancialVolume("TRANSFER", new BigDecimal("200.00"));
+    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER",
+        new BigDecimal("200.00"), true);
+    verify(metricsService, times(1)).recordDailyFinancialVolume("TRANSFER",
+        new BigDecimal("200.00"));
   }
 
   @Test
@@ -277,8 +294,10 @@ class TransactionServiceTest {
     assertEquals("Transfer amount must be positive", exception.getMessage());
     verify(accountRepository, never()).findByAccountNumberWithLock(anyString());
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException", "transfer");
-    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER", new BigDecimal("-100.00"), false);
+    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException",
+        "transfer");
+    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER",
+        new BigDecimal("-100.00"), false);
   }
 
   @Test
@@ -293,14 +312,17 @@ class TransactionServiceTest {
     assertEquals("Source and destination accounts cannot be the same", exception.getMessage());
     verify(accountRepository, never()).findByAccountNumberWithLock(anyString());
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException", "transfer");
-    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER", new BigDecimal("200.00"), false);
+    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException",
+        "transfer");
+    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER",
+        new BigDecimal("200.00"), false);
   }
 
   @Test
   void transfer_WithNonExistentSourceAccount_ShouldThrowException() {
     // Arrange
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.empty());
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.empty());
 
     // Act & Assert
     ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
@@ -310,15 +332,18 @@ class TransactionServiceTest {
     verify(accountRepository, times(1)).findByAccountNumberWithLock("SOURCE-ACC-123");
     verify(accountRepository, never()).findByAccountNumberWithLock("DEST-ACC-456");
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException", "transfer");
+    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException",
+        "transfer");
   }
 
   @Test
   void transfer_WithInactiveSourceAccount_ShouldThrowException() {
     // Arrange
     sourceAccount.setStatus(Account.AccountStatus.BLOCKED);
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
-    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(Optional.of(destinationAccount));
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(
+        Optional.of(destinationAccount));
 
     // Act & Assert
     InvalidTransactionException exception = assertThrows(InvalidTransactionException.class,
@@ -328,16 +353,20 @@ class TransactionServiceTest {
     verify(accountRepository, times(1)).findByAccountNumberWithLock("SOURCE-ACC-123");
     verify(accountRepository, times(1)).findByAccountNumberWithLock("DEST-ACC-456");
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException", "transfer");
-    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER", new BigDecimal("200.00"), false);
+    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTransactionException",
+        "transfer");
+    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER",
+        new BigDecimal("200.00"), false);
   }
 
   @Test
   void transfer_WithInsufficientFunds_ShouldThrowException() {
     // Arrange
     sourceAccount.setBalance(new BigDecimal("100.00"));
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
-    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(Optional.of(destinationAccount));
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(
+        Optional.of(destinationAccount));
 
     // Act & Assert
     InsufficientFundsException exception = assertThrows(InsufficientFundsException.class,
@@ -347,14 +376,17 @@ class TransactionServiceTest {
     verify(accountRepository, times(1)).findByAccountNumberWithLock("SOURCE-ACC-123");
     verify(accountRepository, times(1)).findByAccountNumberWithLock("DEST-ACC-456");
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException", "transfer");
-    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER", new BigDecimal("200.00"), false);
+    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException",
+        "transfer");
+    verify(metricsService, times(1)).recordTransactionProcessed("TRANSFER",
+        new BigDecimal("200.00"), false);
   }
 
   @Test
   void deposit_WithValidParams_ShouldCompleteDepositSuccessfully() {
     // Arrange
-    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(Optional.of(destinationAccount));
+    when(accountRepository.findByAccountNumberWithLock("DEST-ACC-456")).thenReturn(
+        Optional.of(destinationAccount));
 
     Transaction pendingTransaction = new Transaction();
     pendingTransaction.setId(1L);
@@ -364,10 +396,12 @@ class TransactionServiceTest {
     pendingTransaction.setStatus(Transaction.TransactionStatus.PENDING);
 
     when(transactionRepository.save(any(Transaction.class))).thenReturn(pendingTransaction);
-    when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(accountRepository.save(any(Account.class))).thenAnswer(
+        invocation -> invocation.getArgument(0));
 
     // Act
-    TransactionDTO result = transactionService.deposit("DEST-ACC-456", new BigDecimal("300.00"), "Test deposit");
+    TransactionDTO result = transactionService.deposit("DEST-ACC-456", new BigDecimal("300.00"),
+        "Test deposit");
 
     // Assert
     assertNotNull(result);
@@ -377,14 +411,17 @@ class TransactionServiceTest {
     verify(accountRepository, times(1)).findByAccountNumberWithLock("DEST-ACC-456");
     verify(transactionRepository, times(2)).save(any(Transaction.class));
     verify(accountRepository, times(1)).save(destinationAccount);
-    verify(metricsService, times(1)).recordTransactionProcessed("DEPOSIT", new BigDecimal("300.00"), true);
-    verify(metricsService, times(1)).recordDailyFinancialVolume("DEPOSIT", new BigDecimal("300.00"));
+    verify(metricsService, times(1)).recordTransactionProcessed("DEPOSIT", new BigDecimal("300.00"),
+        true);
+    verify(metricsService, times(1)).recordDailyFinancialVolume("DEPOSIT",
+        new BigDecimal("300.00"));
   }
 
   @Test
   void withdraw_WithValidParams_ShouldCompleteWithdrawalSuccessfully() {
     // Arrange
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
 
     Transaction pendingTransaction = new Transaction();
     pendingTransaction.setId(1L);
@@ -394,10 +431,12 @@ class TransactionServiceTest {
     pendingTransaction.setStatus(Transaction.TransactionStatus.PENDING);
 
     when(transactionRepository.save(any(Transaction.class))).thenReturn(pendingTransaction);
-    when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(accountRepository.save(any(Account.class))).thenAnswer(
+        invocation -> invocation.getArgument(0));
 
     // Act
-    TransactionDTO result = transactionService.withdraw("SOURCE-ACC-123", new BigDecimal("200.00"), "Test withdrawal");
+    TransactionDTO result = transactionService.withdraw("SOURCE-ACC-123", new BigDecimal("200.00"),
+        "Test withdrawal");
 
     // Assert
     assertNotNull(result);
@@ -407,24 +446,33 @@ class TransactionServiceTest {
     verify(accountRepository, times(1)).findByAccountNumberWithLock("SOURCE-ACC-123");
     verify(transactionRepository, times(2)).save(any(Transaction.class));
     verify(accountRepository, times(1)).save(sourceAccount);
-    verify(metricsService, times(1)).recordTransactionProcessed("WITHDRAWAL", new BigDecimal("200.00"), true);
-    verify(metricsService, times(1)).recordDailyFinancialVolume("WITHDRAWAL", new BigDecimal("200.00"));
+    verify(metricsService, times(1)).recordTransactionProcessed("WITHDRAWAL",
+        new BigDecimal("200.00"), true);
+    verify(metricsService, times(1)).recordDailyFinancialVolume("WITHDRAWAL",
+        new BigDecimal("200.00"));
   }
 
   @Test
   void withdraw_WithInsufficientFunds_ShouldThrowException() {
     // Arrange
     sourceAccount.setBalance(new BigDecimal("100.00"));
-    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(Optional.of(sourceAccount));
+    when(accountRepository.findByAccountNumberWithLock("SOURCE-ACC-123")).thenReturn(
+        Optional.of(sourceAccount));
 
-    // Act & Assert
+    // Act
+    BigDecimal withdrawalAmount = new BigDecimal("200.00");
+    String description = "Test withdrawal";
+
+    // Assert
     InsufficientFundsException exception = assertThrows(InsufficientFundsException.class,
-        () -> transactionService.withdraw("SOURCE-ACC-123", new BigDecimal("200.00"), "Test withdrawal"));
+        () -> transactionService.withdraw("SOURCE-ACC-123", withdrawalAmount, description));
 
     assertEquals("Insufficient funds for withdrawal", exception.getMessage());
     verify(accountRepository, times(1)).findByAccountNumberWithLock("SOURCE-ACC-123");
     verify(transactionRepository, never()).save(any(Transaction.class));
-    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException", "withdraw");
-    verify(metricsService, times(1)).recordTransactionProcessed("WITHDRAWAL", new BigDecimal("200.00"), false);
+    verify(metricsService, times(1)).recordExceptionOccurred("InsufficientFundsException",
+        "withdraw");
+    verify(metricsService, times(1)).recordTransactionProcessed("WITHDRAWAL", withdrawalAmount,
+        false);
   }
 }
