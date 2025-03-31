@@ -25,29 +25,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class TransactionService {
 
-  // Repository names
   private static final String ACCOUNT_REPOSITORY = "AccountRepository";
   private static final String TRANSACTION_REPOSITORY = "TransactionRepository";
-
-  // Repository methods
   private static final String FIND_BY_ACCOUNT_NUMBER = "findByAccountNumber";
   private static final String FIND_BY_ACCOUNT_NUMBER_WITH_LOCK = "findByAccountNumberWithLock";
-
-  // Transaction types
   private static final String TRANSACTION_TYPE_DEPOSIT = "DEPOSIT";
   private static final String TRANSACTION_TYPE_WITHDRAWAL = "WITHDRAWAL";
   private static final String TRANSACTION_TYPE_TRANSFER = "TRANSFER";
-
-  // Operation types
   private static final String OPERATION_TRANSFER = "transfer";
   private static final String OPERATION_DEPOSIT = "deposit";
   private static final String OPERATION_WITHDRAW = "withdraw";
-
-  // Error messages
   private static final String ERROR_ACCOUNT_NOT_FOUND = "Account not found with number: ";
   private static final String ERROR_SERVICE_ACCOUNT_NOT_FOUND = "Service: Account not found with number: {}";
-
-  // Exception types
   private static final String EXCEPTION_RESOURCE_NOT_FOUND = "ResourceNotFoundException";
   private static final String EXCEPTION_INVALID_TRANSACTION = "InvalidTransactionException";
   private static final String EXCEPTION_INSUFFICIENT_FUNDS = "InsufficientFundsException";
