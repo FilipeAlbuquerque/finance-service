@@ -75,14 +75,50 @@ jacocoTestReport {
         html.required = true   // Relatório HTML legível
         csv.required = false
     }
+
+    // Adiciona as exclusões para DTOs, models, etc.
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/dto/**',
+                    '**/model/**',
+                    '**/entity/**',
+                    '**/config/**',
+                    '**/domain/model/**',
+                    '**/exception/**',
+                    '**/enums/**',
+                    '**/constants/**',
+                    '**/Application.class'
+            ])
+        }))
+    }
 }
 
-tasks.jacocoTestCoverageVerification {
+jacocoTestCoverageVerification {
     dependsOn jacocoTestReport  // Garante que a verificação de cobertura aconteça após o relatório
+
+    // Aplica as mesmas exclusões para verificação de cobertura
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    '**/dto/**',
+                    '**/model/**',
+                    '**/entity/**',
+                    '**/config/**',
+                    '**/domain/model/**',
+                    '**/exception/**',
+                    '**/enums/**',
+                    '**/constants/**',
+                    '**/Application.class'
+            ])
+        }))
+    }
+
     violationRules {
         rule {
             limit {
-                minimum = 0.00  // Define cobertura mínima de 80%
+                minimum = 0.00  // Define cobertura mínima de 0% por enquanto
+                // Você pode aumentar isso gradualmente conforme melhorar a cobertura de testes
             }
         }
     }

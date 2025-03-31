@@ -20,13 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -149,8 +150,9 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(UsernameNotFoundException.class,
-        () -> userService.loadUserByUsername("nonexistent"));
+    Executable executableOperation = () -> userService.loadUserByUsername("nonexistent");
+    assertThrows(UsernameNotFoundException.class, executableOperation);
+
     verify(userRepository, times(1)).findByUsername("nonexistent");
     verify(metricsService, times(1)).recordExceptionOccurred("UsernameNotFoundException",
         "loadUserByUsername");
@@ -198,13 +200,14 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(IllegalArgumentException.class, () ->
-        userService.createUser("existinguser", "password", "new@example.com",
-            "test", "albuquerque", List.of("ROLE_USER"))
-    );
+    Executable executableOperation = () -> userService.createUser(
+        "existinguser", "password", "new@example.com",
+        "test", "albuquerque", List.of("ROLE_USER"));
+    assertThrows(IllegalArgumentException.class, executableOperation);
+
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("IllegalArgumentException"),
-        eq("createUser"));
+    verify(metricsService, times(1)).recordExceptionOccurred("IllegalArgumentException",
+        "createUser");
   }
 
   @Test
@@ -215,13 +218,14 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(IllegalArgumentException.class, () ->
-        userService.createUser("newuser", "password", "existing@example.com",
-            "test", "albuquerque", List.of("ROLE_USER"))
-    );
+    Executable executableOperation = () -> userService.createUser(
+        "newuser", "password", "existing@example.com",
+        "test", "albuquerque", List.of("ROLE_USER"));
+    assertThrows(IllegalArgumentException.class, executableOperation);
+
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("IllegalArgumentException"),
-        eq("createUser"));
+    verify(metricsService, times(1)).recordExceptionOccurred("IllegalArgumentException",
+        "createUser");
   }
 
   @Test
@@ -248,8 +252,10 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(ResourceNotFoundException.class,
-        () -> userService.requestPasswordReset("nonexistent@example.com"));
+    Executable executableOperation = () -> userService.requestPasswordReset(
+        "nonexistent@example.com");
+    assertThrows(ResourceNotFoundException.class, executableOperation);
+
     verify(userRepository, times(1)).findByEmail("nonexistent@example.com");
     verify(userRepository, never()).save(any(User.class));
     verify(emailService, never()).sendPasswordResetEmail(anyString(), anyString());
@@ -284,13 +290,15 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(ResourceNotFoundException.class,
-        () -> userService.resetPassword("invalid-token", "newPassword"));
+    Executable executableOperation = () -> userService.resetPassword("invalid-token",
+        "newPassword");
+    assertThrows(ResourceNotFoundException.class, executableOperation);
+
     verify(userRepository, times(1)).findByPasswordResetToken("invalid-token");
     verify(passwordEncoder, never()).encode(anyString());
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("ResourceNotFoundException"),
-        eq("resetPassword"));
+    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException",
+        "resetPassword");
   }
 
   @Test
@@ -303,13 +311,15 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(InvalidTokenException.class,
-        () -> userService.resetPassword("expired-token", "newPassword"));
+    Executable executableOperation = () -> userService.resetPassword("expired-token",
+        "newPassword");
+    assertThrows(InvalidTokenException.class, executableOperation);
+
     verify(userRepository, times(1)).findByPasswordResetToken("expired-token");
     verify(passwordEncoder, never()).encode(anyString());
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("InvalidTokenException"),
-        eq("resetPassword"));
+    verify(metricsService, times(1)).recordExceptionOccurred("InvalidTokenException",
+        "resetPassword");
   }
 
   @Test
@@ -335,13 +345,14 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(ResourceNotFoundException.class, () ->
-        userService.updateUser(999L, "Updated", "User", "updated@example.com")
-    );
+    Executable executableOperation = () -> userService.updateUser(999L, "Updated", "User",
+        "updated@example.com");
+    assertThrows(ResourceNotFoundException.class, executableOperation);
+
     verify(userRepository, times(1)).findById(999L);
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("ResourceNotFoundException"),
-        eq("updateUser"));
+    verify(metricsService, times(1)).recordExceptionOccurred("ResourceNotFoundException",
+        "updateUser");
   }
 
   @Test
@@ -352,12 +363,13 @@ class UserServiceTest {
     doNothing().when(metricsService).recordExceptionOccurred(anyString(), anyString());
 
     // Act & Assert
-    assertThrows(IllegalArgumentException.class, () ->
-        userService.updateUser(1L, "Updated", "User", "existing@example.com")
-    );
+    Executable executableOperation = () -> userService.updateUser(1L, "Updated", "User",
+        "existing@example.com");
+    assertThrows(IllegalArgumentException.class, executableOperation);
+
     verify(userRepository, times(1)).findById(1L);
     verify(userRepository, never()).save(any(User.class));
-    verify(metricsService, times(1)).recordExceptionOccurred(eq("IllegalArgumentException"),
-        eq("updateUser"));
+    verify(metricsService, times(1)).recordExceptionOccurred("IllegalArgumentException",
+        "updateUser");
   }
 }
