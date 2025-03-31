@@ -1,14 +1,17 @@
 FROM gradle:jdk21-alpine AS build
 WORKDIR /app
 COPY . .
-RUN gradle build --no-daemon -x test
+# Use apenas 'assemble' em vez de 'build' para evitar rodar testes e JaCoCo no Docker
+RUN gradle assemble --no-daemon
 
+# Estágio de execução
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+# Copie apenas o jar final do estágio de build
 COPY --from=build /app/build/libs/*.jar app.jar
-
-# Configurações para o container
-ENV SPRING_PROFILES_ACTIVE=docker
+# Configure as opções da JVM
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC"
+# Exponha a porta que a aplicação utiliza
 EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando para executar a aplicação
+ENTRYPOINT java $JAVA_OPTS -jar app.jar

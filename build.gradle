@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.2.3'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'jacoco'
+    id 'org.sonarqube' version '4.4.1.3373'
 }
 
 group = 'com.example'
@@ -121,6 +122,16 @@ jacocoTestCoverageVerification {
                 // Você pode aumentar isso gradualmente conforme melhorar a cobertura de testes
             }
         }
+    }
+}
+
+sonarqube {
+    properties {
+        property 'sonar.projectKey', 'FilipeAlbuquerque_finance-service'
+        property 'sonar.organization', 'filipealbuquerque'
+        property 'sonar.host.url', 'https://sonarcloud.io'
+        property 'sonar.java.coveragePlugin', 'jacoco'
+        property 'sonar.coverage.jacoco.xmlReportPaths', "${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
     }
 }
 
