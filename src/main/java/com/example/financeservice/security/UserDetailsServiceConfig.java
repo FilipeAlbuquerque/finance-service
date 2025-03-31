@@ -1,6 +1,6 @@
 package com.example.financeservice.security;
 
-import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.userdetails.User;
@@ -10,8 +10,22 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
+import java.util.Arrays;
+
 @Configuration
 public class UserDetailsServiceConfig {
+
+  @Value("${app.security.admin.username:admin}")
+  private String adminUsername;
+
+  @Value("${app.security.admin.password:#{environment.APP_ADMIN_PASSWORD}}")
+  private String adminPassword;
+
+  @Value("${app.security.user.username:user}")
+  private String userUsername;
+
+  @Value("${app.security.user.password:#{environment.APP_USER_PASSWORD}}")
+  private String userPassword;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -22,17 +36,17 @@ public class UserDetailsServiceConfig {
   public UserDetailsService userDetailsService() {
     PasswordEncoder encoder = passwordEncoder();
 
-    // Usando a abordagem padrão do Spring Security
+    // Usando valores de configuração externalizados
     UserDetails adminUser = User.builder()
-        .username("admin")
-        .password(encoder.encode("admin"))
-        .roles("ADMIN") // Será convertido para ROLE_ADMIN
+        .username(adminUsername)
+        .password(encoder.encode(adminPassword))
+        .roles("ADMIN")
         .build();
 
     UserDetails regularUser = User.builder()
-        .username("user")
-        .password(encoder.encode("user"))
-        .roles("USER") // Será convertido para ROLE_USER
+        .username(userUsername)
+        .password(encoder.encode(userPassword))
+        .roles("USER")
         .build();
 
     return new InMemoryUserDetailsManager(Arrays.asList(adminUser, regularUser));
