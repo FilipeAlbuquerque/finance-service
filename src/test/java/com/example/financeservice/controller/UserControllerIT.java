@@ -3,12 +3,12 @@ package com.example.financeservice.controller;
 import com.example.financeservice.dto.auth.UserProfileUpdateDTO;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.repository.UserRepository;
-import com.example.financeservice.security.JwtRequestFilter;
 import com.example.financeservice.security.JwtUtils;
 import com.example.financeservice.security.SecurityService;
 import com.example.financeservice.service.EmailService;
 import com.example.financeservice.service.MetricsService;
 import com.example.financeservice.service.UserService;
+import com.example.financeservice.TestSecurityConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
@@ -34,9 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = UserController.class)
-@Import(JwtRequestFilter.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
-@AutoConfigureMockMvc(addFilters = false) // Desativa filtros para simplificar os testes
 class UserControllerIT {
 
   @Autowired
@@ -56,9 +55,6 @@ class UserControllerIT {
   private UserRepository userRepository;
 
   @MockBean
-  private PasswordEncoder passwordEncoder;
-
-  @MockBean
   private MetricsService metricsService;
 
   @MockBean
@@ -73,7 +69,7 @@ class UserControllerIT {
 
   @BeforeEach
   void setUp() {
-    // No need to setup UserDetailsService because filters are disabled
+    // No need for additional setup
   }
 
   @Test

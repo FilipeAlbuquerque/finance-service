@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,10 +18,22 @@ import org.springframework.stereotype.Component;
 public class JwtUtils {
 
   @Value("${jwt.secret:mysecretkey12345mysecretkey12345mysecretkey12345}")
-  private String secret;
+  private String secretString;
 
   @Value("${jwt.expiration:86400000}")
   private int expiration;  // 24 horas por padrão
+
+  private String getEncodedSecret() {
+    // Garantir que a chave secreta esteja em Base64
+    try {
+      // Verificar se já é uma string Base64 válida
+      Decoders.BASE64.decode(secretString);
+      return secretString;
+    } catch (Exception e) {
+      // Se não for Base64 válido, codificar
+      return Base64.getEncoder().encodeToString(secretString.getBytes());
+    }
+  }
 
   public String generateToken(UserDetails userDetails) {
     Map<String, Object> claims = new HashMap<>();
@@ -64,7 +77,7 @@ public class JwtUtils {
   }
 
   private SecretKey getSignKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(secret);
+    byte[] keyBytes = Decoders.BASE64.decode(getEncodedSecret());
     return Keys.hmacShaKeyFor(keyBytes);
   }
 }

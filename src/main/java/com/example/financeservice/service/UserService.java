@@ -37,6 +37,7 @@ public class UserService implements UserDetailsService {
   @Override
   @Transactional(readOnly = true)
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    log.info("Tentando carregar usuário: {}", username);
     // Usar um timer para medir o tempo de carregamento do usuário
     return metricsService.recordRepositoryExecutionTime(
         "UserRepository", "findByUsername",
@@ -48,6 +49,9 @@ public class UserService implements UserDetailsService {
                     "loadUserByUsername");
                 return new UsernameNotFoundException("User not found with username: " + username);
               });
+          log.info("Usuário encontrado: {}, senha começa com: {}", user.getUsername(),
+              user.getPassword().substring(0, 10));
+          log.info("Roles do usuário: {}", user.getRoles());
 
           return org.springframework.security.core.userdetails.User.builder()
               .username(user.getUsername())

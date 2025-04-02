@@ -20,14 +20,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 public class JwtRequestFilter extends OncePerRequestFilter {
 
-  private UserDetailsService userDetailsService;
-
-  private JwtUtils jwtUtils;
+  private final UserDetailsService userDetailsService;
+  private final JwtUtils jwtUtils;
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain chain)
       throws ServletException, IOException {
+    log.info("JwtRequestFilter está sendo executado. userDetailsService: {}, jwtUtils: {}",
+        userDetailsService != null ? "injetado" : "null",
+        jwtUtils != null ? "injetado" : "null");
 
     final String authorizationHeader = request.getHeader("Authorization");
     log.info("Processing request: {} {}, Auth header: {}",

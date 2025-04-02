@@ -7,12 +7,11 @@ import com.example.financeservice.dto.auth.RegisterRequestDTO;
 import com.example.financeservice.exception.InvalidTokenException;
 import com.example.financeservice.exception.ResourceNotFoundException;
 import com.example.financeservice.model.User;
-import com.example.financeservice.security.JwtRequestFilter;
 import com.example.financeservice.security.JwtUtils;
 import com.example.financeservice.security.LoginAttemptService;
-import com.example.financeservice.security.SecurityConfig;
 import com.example.financeservice.service.MetricsService;
 import com.example.financeservice.service.UserService;
+import com.example.financeservice.TestSecurityConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
 import java.util.List;
@@ -38,17 +37,19 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
 
 @WebMvcTest(controllers = AuthController.class)
-@Import({JwtRequestFilter.class, SecurityConfig.class})
+@AutoConfigureMockMvc(addFilters = false)
+@Import(TestSecurityConfig.class)
+@ActiveProfiles("test")
 class AuthControllerIT {
 
   @Autowired
@@ -64,9 +65,6 @@ class AuthControllerIT {
   private JwtUtils jwtUtils;
 
   @MockBean
-  private UserDetailsService userDetailsService;
-
-  @MockBean
   private LoginAttemptService loginAttemptService;
 
   @MockBean
@@ -74,10 +72,6 @@ class AuthControllerIT {
 
   @MockBean
   private UserService userService;
-
-  // Adicionando @MockBean para PasswordEncoder, necessário pelo SecurityConfig
-  @MockBean
-  private PasswordEncoder passwordEncoder;
 
   private User testUser;
   private UserDetails userDetails;
@@ -134,6 +128,7 @@ class AuthControllerIT {
     verify(metricsService, times(1)).recordSuccessfulLogin("testuser");
   }
 
+  // Outros métodos de teste continuam iguais...
   @Test
   void login_WithInvalidCredentials_ShouldReturn401() throws Exception {
     // Arrange
@@ -175,7 +170,7 @@ class AuthControllerIT {
         eq("password123"),
         eq("new@example.com"),
         eq("New"),
-        eq("User"),  // Corrigido de "New" para "User"
+        eq("User"),
         any(List.class)))
         .thenReturn(testUser);
 

@@ -56,6 +56,8 @@ public class AuthController {
     }
 
     try {
+      log.info("Tentando autenticar usuário: {}", request.getUsername());
+      log.info("Tipo de authenticationManager: {}", authenticationManager.getClass().getName());
       // Autenticar usuário
       Authentication authentication = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(
